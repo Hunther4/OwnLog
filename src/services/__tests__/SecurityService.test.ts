@@ -22,7 +22,7 @@ describe('SecurityService', () => {
   });
 
   describe('PIN Hashing (Task 2.1)', () => {
-    it('should produce a hash for a given pin and salt', async () => {
+    it('should produce a hash for a given pin and salt using 10,000 iterations', async () => {
       const pin = '1234';
       const salt = 'random-salt';
       const mockHash = 'hashed-pin-123';
@@ -30,9 +30,10 @@ describe('SecurityService', () => {
 
       const hash = await SecurityService.hashPin(pin, salt);
       
+      expect(Crypto.digestStringAsync).toHaveBeenCalledTimes(10000);
       expect(Crypto.digestStringAsync).toHaveBeenCalledWith(
         'sha256', 
-        `${pin}:${salt}`
+        expect.any(String)
       );
       expect(hash).toBe(mockHash);
     });
@@ -58,13 +59,15 @@ describe('SecurityService', () => {
       const mockRecoveryKey = 'recovery-key-123';
       const mockRecoveryHash = 'recovery-hash-123';
 
-      (Crypto.randomUUID as jest.Mock).mockReturnValueOnce(mockSalt).mockReturnValueOnce(mockRecoveryKey);
+      (Crypto.randomUUID as jest.Mock)
+        .mockReturnValueOnce(mockSalt)
+        .mockReturnValueOnce(mockRecoveryKey);
       (Crypto.digestStringAsync as jest.Mock)
-        .mockResolvedValueOnce(mockHash) // for pin
-        .mockResolvedValueOnce(mockRecoveryHash); // for recovery key
-
+        .mockResolvedValueOnce(mockHash)
+        .mockResolvedValueOnce(mockRecoveryHash);
+      
       const result = await SecurityService.setupPin(pin);
-
+      
       expect(result.recoveryKey).toBe(mockRecoveryKey);
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith('pin_salt', mockSalt);
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith('pin_hash', mockHash);
@@ -79,8 +82,8 @@ describe('SecurityService', () => {
       const hash = 'mock-hash';
       
       (SecureStore.getItemAsync as jest.Mock)
-        .mockResolvedValueOnce(salt) // for salt
-        .mockResolvedValueOnce(hash); // for hash
+        .mockResolvedValueOnce(salt)
+        .mockResolvedValueOnce(hash);
       (Crypto.digestStringAsync as jest.Mock).mockResolvedValue(hash);
 
       const isValid = await SecurityService.verifyPin(pin);
@@ -116,16 +119,17 @@ describe('SecurityService', () => {
 
       (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(storedRecoveryHash);
       (Crypto.digestStringAsync as jest.Mock)
-        .mockResolvedValueOnce(calculatedRecoveryHash) // verify recovery key
-        .mockResolvedValueOnce(mockHash) // hash new pin
-        .mockResolvedValueOnce(mockNewRecoveryHash); // hash new recovery key
+        .mockResolvedValueOnce(calculatedRecoveryHash)
+        .mockResolvedValueOnce(mockHash)
+        .mockResolvedValueOnce(mockNewRecoveryHash);
       (Crypto.randomUUID as jest.Mock).mockReturnValueOnce(mockSalt).mockReturnValueOnce(mockNewRecoveryKey);
 
       const success = await SecurityService.resetPinWithRecoveryKey(recoveryKey, newPin);
-
+      
       expect(success).toBe(true);
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith('pin_salt', mockSalt);
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith('pin_hash', mockHash);
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith('recovery_key_hash', mockNewRecoveryHash);
     });
 
     it('should fail to reset PIN if recovery key is invalid', async () => {

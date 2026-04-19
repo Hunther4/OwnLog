@@ -20,12 +20,12 @@
 
 ## Batch 3: Security Layer - UI/UX (The Interface)
 
-- [ ] 3.1 Create `app/screens/LockScreen.tsx` featuring a secure numeric keypad for PIN entry.
-- [ ] 3.2 Create `app/screens/RecoverySetupScreen.tsx` to display the generated recovery key and require user confirmation.
-- [ ] 3.3 Create `app/screens/RecoveryScreen.tsx` for recovery key input and redirection to new PIN setup.
-- [ ] 3.4 Modify `app/_layout.tsx` to intercept app boot, check `isPinConfigured()`, and conditionally render `LockScreen`.
-- [ ] 3.5 Connect `LockScreen` UI to `SecurityService.verifyPin()` and implement the "Forgot PIN" navigation to `RecoveryScreen`.
-- [ ] 3.6 Connect `RecoveryScreen` and `RecoverySetupScreen` to `SecurityService` for key validation and PIN resetting.
+- [x] 3.1 Create `app/screens/LockScreen.tsx` featuring a secure numeric keypad for PIN entry.
+- [x] 3.2 Create `app/screens/RecoverySetupScreen.tsx` to display the generated recovery key and require user confirmation.
+- [x] 3.3 Create `app/screens/RecoveryScreen.tsx` for recovery key input and redirection to new PIN setup.
+- [x] 3.4 Modify `app/_layout.tsx` to intercept app boot, check `isPinConfigured()`, and conditionally render `LockScreen`.
+- [x] 3.5 Connect `LockScreen` UI to `SecurityService.verifyPin()` and implement the "Forgot PIN" navigation to `RecoveryScreen`.
+- [x] 3.6 Connect `RecoveryScreen` and `RecoverySetupScreen` to `SecurityService` for key validation and PIN resetting.
 
 ## Batch 4: Rollout & Final Verification (The Finish Line)
 

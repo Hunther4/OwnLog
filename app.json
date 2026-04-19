@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "OwnLog",
+    "slug": "hunther-wallet",
+    "version": "1.0.0",
+    "scheme": "com.drack.ownlog",
+    "android": {
+      "package": "com.drack.ownlog",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundImage": "./assets/adaptive-icon-background.png"
+      },
+      "icon": "./assets/icon.png"
+    },
+    "ios": {
+      "bundleIdentifier": "com.drack.ownlog"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "@react-native-community/datetimepicker"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4deb6701-b9d0-4434-80df-970a17e7035d"
+      }
+    },
+    "owner": "hunther4"
+  }
+}

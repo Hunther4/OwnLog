@@ -7,25 +7,31 @@ const RECOVERY_KEY_HASH_KEY = 'recovery_key_hash';
 
 const SecurityService = {
   /**
-   * Hashes a PIN using SHA-256 with a given salt.
-   * Used by verifyPin and setupPin.
+   * Hashes a PIN using SHA-256 with a given salt and 10,000 iterations.
+   * Strictly follows the project blueprint for key stretching.
    */
   async hashPin(pin: string, salt: string): Promise<string> {
-    return await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      `${pin}:${salt}`
-    );
+    let currentHash = `${pin}:${salt}`;
+
+    for (let i = 0; i < 10000; i++) {
+      currentHash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        currentHash
+      );
+    }
+
+    return currentHash;
   },
 
   /**
-   * Generates a new salt and recovery key, hashes the PIN and recovery key, 
+   * Generates a new salt and recovery key, hashes the PIN and recovery key,
    * and stores them securely.
    * @returns The plain-text recovery key (should be shown to user once).
    */
   async setupPin(pin: string): Promise<{ recoveryKey: string }> {
     const salt = Crypto.randomUUID();
     const pinHash = await this.hashPin(pin, salt);
-    
+
     const recoveryKey = Crypto.randomUUID();
     const recoveryHash = await Crypto.digestStringAsync(
       Crypto.CryptoDigestAlgorithm.SHA256,
@@ -73,13 +79,13 @@ const SecurityService = {
       return false;
     }
 
-    // Recovery key is valid, setup new PIN.
-    // We reuse setupPin but this also generates a new recovery key.
-    // According to the design, the recovery key is sovereign and can be used to reset.
-    // The design doesn't explicitly say if the recovery key changes on reset, 
-    // but generating a new one is safer. 
-    // However, the interface returns the new recovery key.
-    await this.setupPin(newPin);
+    // Recovery key is valid, update PIN and salt only.
+    // Keep existing recovery key (sovereign recovery principle).
+    const newSalt = Crypto.randomUUID();
+    const pinHash = await this.hashPin(newPin, newSalt);
+
+    await SecureStore.setItemAsync(PIN_SALT_KEY, newSalt);
+    await SecureStore.setItemAsync(PIN_HASH_KEY, pinHash);
     return true;
   },
 

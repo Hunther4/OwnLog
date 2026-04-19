@@ -1,0 +1,50 @@
+# 📦 Dependencias
+node_modules/
+.npm/
+.cache/
+
+# 📱 Carpetas de Compilación Móvil
+.expo/
+android/
+ios/
+.expo-shared/
+
+# 🏗️ Builds de Producción
+dist/
+build/
+.next/
+out/
+.vercel/
+
+# 🗄️ Bases de Datos y Binarios
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+*.bin
+
+# 🔒 Archivos de Entorno y Lockfiles
+.env
+.env.*
+package-lock.json
+yarn.lock
+bun.lockb
+pnpm-lock.yaml
+
+# 🖼️ Multimedia
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+*.svg
+*.ico
+assets/
+
+# 🛠️ Git y Configs de IDE
+.git/
+.vscode/
+.idea/
+.DS_Store
+thumbs.db
+
