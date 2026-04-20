@@ -104,7 +104,7 @@ Ejemplo:
 EXPO_PUBLIC_GOOGLE_CLIENT_ID=967360905724-u1ibo9sep2sg0e8m2ng9o8736pfersrb.apps.googleusercontent.com
 ```
 
-**Nota:** El archivo `.env` está incluido en `.gitignore` — no se subirá a GitHub.
+**Nota:** El archivo `.env` está en `.gitignore` — no se subirá a GitHub.
 
 ### Desarrollo / Development
 
