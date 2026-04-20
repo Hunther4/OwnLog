@@ -257,36 +257,32 @@ export const GoogleDriveService = {
     tokenExpiry = null;
   },
 
-  /** Ensures the Respaldo_HuntherWallet folder exists; returns its Drive ID. */
+/** Ensures the Respaldo_OwnLog folder exists; returns its Drive ID. */
+
+  ensureBackupFolder = async (): Promise<string> => {
+    const query = `name='Respaldo_OwnLog' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+
+  /** Ensures the Respaldo_OwnLog folder exists; returns its Drive ID. */
   async ensureBackupFolder(): Promise<string> {
-    const token = await this._ensureValidToken();
-    // Query for existing folder
-    const query = encodeURIComponent(
-      `name="Respaldo_HuntherWallet" and mimeType='application/vnd.google-apps.folder' and trashed=false`
-    );
-    const response = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (!response.ok) {
-      throw new Error(`Drive API error: ${response.statusText}`);
+    const query = `name='Respaldo_OwnLog' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  
+    const folder = await this.findFolderByName('Respaldo_OwnLog');
+  
+    if (folder) {
+      this.backupFolderId = folder.id;
+      return folder.id;
     }
-    const data = await response.json();
-    if (data.files && data.files.length > 0) {
-      // Folder exists, return its ID
-      return data.files[0].id;
-    }
-    // Create folder
+  
+    // Create folder if not exists
+    const accessToken = await this._ensureValidToken();
     const createResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        name: 'Respaldo_HuntherWallet',
+        name: 'Respaldo_OwnLog',
         mimeType: 'application/vnd.google-apps.folder',
       }),
     });

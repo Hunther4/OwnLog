@@ -2,10 +2,6 @@
   "name": "ownlog",
   "version": "1.0.0",
   "main": "expo-router/entry",
-  "overrides": {
-    "react": "19.1.0",
-    "react-test-renderer": "19.1.0"
-  },
   "scripts": {
     "test": "jest",
     "lint": "eslint . --ext .ts,.tsx",

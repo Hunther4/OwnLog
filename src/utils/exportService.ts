@@ -44,7 +44,7 @@ export const exportTransactionsToCSV = async (): Promise<{ success: boolean; err
 
     // 3. Save to file using expo-file-system in the CACHE directory
     const dateStr = new Date().toISOString().split('T')[0];
-    const fileName = `HuntherWallet_Export_${dateStr}.csv`;
+    const fileName = `OwnLog_Export_${dateStr}.csv`;
     const filePath = `${cacheDir}${fileName}`;
 
     await writeAsStringAsync(filePath, csvContent, {

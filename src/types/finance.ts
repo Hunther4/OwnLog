@@ -1,7 +1,7 @@
 import { ThemeMode } from '../theme/theme';
 
 /**
- * Core finance types for HuntherWallet.
+ * Core finance types for OwnLog.
  * Aligns with database schema but includes UI-specific fields.
  */
 

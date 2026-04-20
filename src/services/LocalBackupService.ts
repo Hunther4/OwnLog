@@ -46,7 +46,7 @@ export const LocalBackupService = {
 
       await Sharing.shareAsync(tempPath, {
         mimeType: 'application/octet-stream',
-        dialogTitle: 'Export HuntherWallet Backup',
+        dialogTitle: 'Export OwnLog Backup',
         UTI: 'public.database',
       });
 
