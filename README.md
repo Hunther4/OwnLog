@@ -80,11 +80,31 @@
 
 ## 🇪🇸 Español — Cómo usar
 
+### Requisitos previos
+
+1. **Google Cloud Console:** Crear un proyecto y obtener un **OAuth Client ID**
+2. **Configurar OAuth:** Agregar el hash SHA-1 del keystore de firma
+
 ### Instalar / Install
 
 ```bash
 npm install
 ```
+
+### Configuración
+
+Crear archivo `.env` en la raíz del proyecto:
+
+```bash
+EXPO_PUBLIC_GOOGLE_CLIENT_ID=TU_CLIENT_ID.apps.googleusercontent.com
+```
+
+Ejemplo:
+```bash
+EXPO_PUBLIC_GOOGLE_CLIENT_ID=967360905724-u1ibo9sep2sg0e8m2ng9o8736pfersrb.apps.googleusercontent.com
+```
+
+**Nota:** El archivo `.env` está incluido en `.gitignore` — no se subirá a GitHub.
 
 ### Desarrollo / Development
 
@@ -102,11 +122,31 @@ npx eas build -p android --profile production
 
 ## 🇺🇸 English — How to Use
 
-### Instalar / Install
+### Prerequisites
+
+1. **Google Cloud Console:** Create a project and get an **OAuth Client ID**
+2. **Configure OAuth:** Add your signing keystore's SHA-1 hash
+
+### Install
 
 ```bash
 npm install
 ```
+
+### Configuration
+
+Create a `.env` file in the project root:
+
+```bash
+EXPO_PUBLIC_GOOGLE_CLIENT_ID=YOUR_CLIENT_ID.apps.googleusercontent.com
+```
+
+Example:
+```bash
+EXPO_PUBLIC_GOOGLE_CLIENT_ID=967360905724-u1ibo9sep2sg0e8m2ng9o8736pfersrb.apps.googleusercontent.com
+```
+
+**Note:** The `.env` file is in `.gitignore` — it won't be pushed to GitHub.
 
 ### Desarrollo / Development
 
