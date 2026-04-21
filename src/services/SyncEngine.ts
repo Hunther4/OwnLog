@@ -76,9 +76,17 @@ export class SyncEngine {
     tempDbPath: string
   ): Promise<{ success: boolean; message: string }> {
     try {
+      // Validate tempDbPath to prevent SQL injection
+      // Path must be absolute and not contain malicious characters
+      if (!tempDbPath || !tempDbPath.startsWith('/')) {
+        throw new Error('Invalid temp database path: must be absolute');
+      }
+      // Escape single quotes in path for SQL
+      const safePath = tempDbPath.replace(/'/g, "''");
+
       await SQLiteEngine.executeInTransaction(async (db) => {
-        // Attach the downloaded DB as a separate schema
-        await db.execAsync(`ATTACH DATABASE '${tempDbPath}' AS nube;`);
+        // Attach the downloaded DB as a separate schema (using escaped path)
+        await db.execAsync(`ATTACH DATABASE '${safePath}' AS nube;`);
 
         // MERGE TRANSACTIONS: LWW (Last Write Wins)
         // 1. Update existing local records if the cloud version is newer

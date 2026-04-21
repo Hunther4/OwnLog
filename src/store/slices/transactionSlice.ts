@@ -56,6 +56,11 @@ export const createTransactionSlice: StateCreator<
   },
 
   addTransaction: async (tx) => {
+    // Validate amount is positive
+    if (!tx.monto || tx.monto <= 0) {
+      throw new Error('Amount must be greater than 0');
+    }
+
     const state = get();
     const category = state.categories.find(c => c.id === tx.categoria_id);
     if (!category) throw new Error('Category not found');
@@ -89,8 +94,6 @@ export const createTransactionSlice: StateCreator<
           filteredIds: state.filteredIds.map(id => id === tempId ? realId : id),
         };
       });
-      
-      await get().setFilters(get().filters);
     } catch (error) {
       set((state) => {
         const newEntities = { ...state.transactions.entities };
@@ -137,7 +140,6 @@ export const createTransactionSlice: StateCreator<
 
     try {
       await TransactionRepository.delete(id);
-      await get().setFilters(get().filters);
     } catch (error) {
       set((state) => ({
         transactions: {

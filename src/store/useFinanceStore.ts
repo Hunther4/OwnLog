@@ -381,8 +381,6 @@ export const useFinanceStore = create<FinanceStore>()((set, get) => ({
             },
           }));
         }
-        // Refresh filtered list to include the new transaction if it matches current filters
-        await get().setFilters(get().filters);
       });
     } catch (error) {
       console.error('[useFinanceStore] Failed to add transaction:', error);
@@ -439,7 +437,6 @@ export const useFinanceStore = create<FinanceStore>()((set, get) => ({
           [currentBalance.toString()]
         );
         // 3. No need to update store again (already updated optimistically)
-        await get().setFilters(get().filters);
       });
     } catch (error) {
       console.error('[useFinanceStore] Failed to delete transaction:', error);

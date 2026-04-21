@@ -38,7 +38,7 @@ const DockItem = memo(({ icon, label, onPress, palette, active, isActive }: Dock
       activeOpacity={0.7}
     >
       <Ionicons
-        name={icon as any}
+        name={icon as keyof typeof Ionicons.glyphMap}
         size={22}
         color={iconColor}
       />

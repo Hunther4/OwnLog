@@ -15,6 +15,11 @@ interface CategoryPieChartProps {
 }
 
 export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ data }) => {
+  // Don't render with empty data - chart will crash
+  if (!data || data.length === 0) {
+    return null;
+  }
+
   const screenWidth = Dimensions.get('window').width;
   const themeMode = useFinanceStore((state) => state.themeMode);
   const palette = getPalette(themeMode);

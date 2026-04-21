@@ -67,7 +67,7 @@ export const TransactionRepository = {
     if (keys.length === 0) return;
 
     const setClause = keys.map((key) => `${key} = ?`).join(', ');
-    const values = keys.map((key) => updates[key as keyof Transaction]);
+    const values = [...keys.map((key) => updates[key as keyof Transaction]), id];
 
     await SQLiteEngine.executeInTransaction(async (db) => {
       await db.runAsync(

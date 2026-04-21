@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { useBoundStore } from '../store/useBoundStore';
 import { getPalette } from '../theme/theme';
@@ -37,7 +37,7 @@ export default function AddTransactionForm({ onSave }: { onSave: () => void }) {
 
   const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
 
-  const onDateChange = (event: any, selectedDate?: Date) => {
+  const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
       setDate(selectedDate);

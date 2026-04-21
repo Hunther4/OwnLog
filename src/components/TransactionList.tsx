@@ -1,16 +1,16 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { useBoundStore } from '../store/useBoundStore';
 import { formatCurrency, CurrencyCode } from '../utils/currencyFormatter';
-import { theme, getPalette } from '../theme/theme';
+import { theme, getPalette, type ThemePalette } from '../theme/theme';
 import EmptyState from './EmptyState';
 import { Category, Transaction } from '../types/master';
 
 interface TransactionItemProps {
   item: Transaction;
-  palette: any;
+  palette: ThemePalette;
   categories: Category[];
   currency: string;
   getCategoryName: (id: number) => string;
@@ -110,12 +110,14 @@ export default function TransactionList({
     setFilters({ startDate, endDate });
   };
 
-  const onStartDateChange = (event: any, date?: Date) => {
+const onStartDateChange = (event: DateTimePickerEvent, date?: Date) => {
     setShowStartPicker(false);
-    if (date) {
-      setTempStartDate(date);
-      setStartDate(date.toISOString().split('T')[0]);
-    }
+    if (date) setStartDate(date);
+  };
+
+  const onEndDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    setShowEndPicker(false);
+    if (date) setEndDate(date);
   };
 
   const onEndDateChange = (event: any, date?: Date) => {

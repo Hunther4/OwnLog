@@ -257,19 +257,11 @@ export const GoogleDriveService = {
     tokenExpiry = null;
   },
 
-/** Ensures the Respaldo_OwnLog folder exists; returns its Drive ID. */
-
-  ensureBackupFolder = async (): Promise<string> => {
-    const query = `name='Respaldo_OwnLog' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-
   /** Ensures the Respaldo_OwnLog folder exists; returns its Drive ID. */
   async ensureBackupFolder(): Promise<string> {
-    const query = `name='Respaldo_OwnLog' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-  
     const folder = await this.findFolderByName('Respaldo_OwnLog');
   
     if (folder) {
-      this.backupFolderId = folder.id;
       return folder.id;
     }
   
@@ -289,8 +281,21 @@ export const GoogleDriveService = {
     if (!createResponse.ok) {
       throw new Error(`Failed to create folder: ${createResponse.statusText}`);
     }
-    const folder = await createResponse.json();
-    return folder.id;
+    const createdFolder = await createResponse.json();
+    return createdFolder.id;
+  },
+
+  /** Finds a folder by name, returns its metadata if found. */
+  async findFolderByName(folderName: string): Promise<{ id: string; name: string } | null> {
+    const token = await this._ensureValidToken();
+    const query = encodeURIComponent(`name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+    const url = `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.files?.[0] || null;
   },
 
   /** Generates a backup file name in format backup_YYYY‑MM‑DD_HHmm.db */

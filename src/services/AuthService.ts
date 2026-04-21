@@ -60,8 +60,8 @@ export class AuthService {
       const tokens = JSON.parse(tokensJson);
 
       // Check if token is still valid (with a 5-minute grace period)
-      if (Date.now() < tokens.expiresAt - 300000) {
-        return tokens.accessToken;
+      if (!tokens?.expiresAt || Date.now() < tokens.expiresAt - 300000) {
+        return tokens?.accessToken || null;
       }
 
       // Token expired: Try to refresh

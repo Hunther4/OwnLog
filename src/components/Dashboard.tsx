@@ -13,16 +13,18 @@ import {
 import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useBoundStore } from '../store/useBoundStore';
-import { getPalette } from '../theme/theme';
+import { getPalette, type ThemePalette, type ThemeMode } from '../theme/theme';
 import { formatCurrency } from '../utils/currencyFormatter';
+import type { Currency } from '../types/master';
 import * as Haptics from 'expo-haptics';
 import TransactionList from './TransactionList';
 import { TransactionRepository } from '../repositories/TransactionRepository';
+import type { ThemePalette } from '../theme/theme';
 
 /**
  * DashboardSkeleton - Loading placeholder
  */
-function DashboardSkeleton({ palette }: { palette: any }) {
+function DashboardSkeleton({ palette }: { palette: ThemePalette }) {
   return (
     <View style={[styles.container, { backgroundColor: palette.background }]}>
       <View style={[styles.skeletonBalance, { backgroundColor: palette.card }]}>
@@ -39,9 +41,9 @@ function DashboardSkeleton({ palette }: { palette: any }) {
  * BalanceWidget
  * Atomic component that ONLY re-renders when the balance changes.
  */
-const BalanceWidget = memo(({ themeMode, currency }: { themeMode: string; currency: string }) => {
+const BalanceWidget = memo(({ themeMode, currency }: { themeMode: ThemeMode; currency: Currency }) => {
   const currentBalance = useBoundStore((state) => state.currentBalance);
-  const palette = getPalette(themeMode as any);
+  const palette = getPalette(themeMode);
 
   return (
     <View style={[styles.balanceContainer, { backgroundColor: palette.card }]}>

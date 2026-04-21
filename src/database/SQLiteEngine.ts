@@ -235,9 +235,9 @@ class SQLiteEngine {
 
   public async deleteCategory(id: number): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
-    // WARNING #1: Use soft delete instead of hard delete
+    // Soft delete - mark as deleted AND inactive
     await this.db.runAsync(
-      "UPDATE categorias SET is_deleted = 1, updated_at = strftime('%s','now') WHERE id = ?",
+      "UPDATE categorias SET is_deleted = 1, activa = 0, updated_at = strftime('%s','now') WHERE id = ?",
       [id]
     );
   }
@@ -245,6 +245,9 @@ class SQLiteEngine {
   public async resetDatabase(): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
     try {
+      // Disable foreign keys before dropping tables
+      await this.db.execAsync('PRAGMA foreign_keys = OFF');
+      
       // Delete ALL data - use DROP IF EXISTS for tables that may not exist
       await this.db.execAsync(`DROP TABLE IF EXISTS transacciones`);
       await this.db.execAsync(`DROP TABLE IF EXISTS categorias`);
@@ -256,6 +259,9 @@ class SQLiteEngine {
       await this.db.execAsync(CREATE_TABLES_V1);
       await this.db.execAsync(CREATE_INDICES_V1);
       await this.db.execAsync('PRAGMA user_version = 1');
+      
+      // Re-enable foreign keys
+      await this.db.execAsync('PRAGMA foreign_keys = ON');
       
       // Create quick_actions table if not in schema
       await this.db.execAsync(`

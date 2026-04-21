@@ -14,14 +14,14 @@ import {
 import { useFinanceStore } from '../store/useFinanceStore';
 import { Category } from '../types/finance';
 import { exportTransactionsToCSV } from '../utils/exportService';
-import { theme, getPalette } from '../theme/theme';
+import { theme, getPalette, type ThemePalette } from '../theme/theme';
 import EmptyState from './EmptyState';
 
 interface CategoryFormProps {
   category: Partial<Category>;
-  onSave: (cat: any) => void;
+  onSave: (cat: Omit<Category, 'id'>) => void;
   onCancel: () => void;
-  palette: any;
+  palette: ThemePalette;
 }
 
 const CategoryForm = ({ category, onSave, onCancel, palette }: CategoryFormProps) => {
@@ -165,14 +165,14 @@ export const CategoryManager: React.FC = () => {
     }
   };
 
-  const handleSave = async (cat: any) => {
+  const handleSave = async (cat: Omit<Category, 'id'>) => {
     if (editingCategory?.id) {
       await updateCategory(editingCategory.id, cat);
       if (cat.budget !== undefined) {
         await useFinanceStore.getState().setBudget(editingCategory.id, cat.budget || 0);
       }
     } else {
-      const id = await addCategory({ ...cat, activa: true } as any);
+      const id = await addCategory({ ...cat, activa: true });
       if (cat.budget !== undefined) {
         await useFinanceStore.getState().setBudget(id, cat.budget || 0);
       }

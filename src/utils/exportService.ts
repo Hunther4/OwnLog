@@ -2,8 +2,11 @@ import { cacheDirectory, writeAsStringAsync, EncodingType } from 'expo-file-syst
 import * as Sharing from 'expo-sharing';
 import SQLiteEngine from '../database/SQLiteEngine';
 
-// Get FS paths correctly
-const cacheDir = cacheDirectory || '';
+// Get FS paths correctly - validate cache directory exists
+const cacheDir = cacheDirectory;
+if (!cacheDir) {
+  throw new Error('Cache directory not available');
+}
 
 /**
  * Exports all transactions from the database to a CSV file and opens the system share dialog.
@@ -31,12 +34,19 @@ export const exportTransactionsToCSV = async (): Promise<{ success: boolean; err
     }
 
     // 2. Format as CSV
-    // We use double quotes for descriptions to handle commas within the text
+    // We use double quotes for descriptions to handle commas and newlines within the text
     const header = 'Date,Category,Amount,Description\n';
     const rows = transactions
       .map((t) => {
-        const sanitizedDesc = t.description ? `"${t.description.replace(/"/g, '""')}"` : '""';
-        return `${t.date},${t.category},${t.amount},${sanitizedDesc}`;
+        // Handle null, newlines, quotes, and commas
+        const sanitizedDesc = t.description
+          ? `"${t.description.replace(/"/g, '""').replace(/[\n\r]/g, ' ')}"`
+          : '""';
+        // Escape category as well (may contain commas)
+        const sanitizedCategory = t.category.includes(',')
+          ? `"${t.category.replace(/"/g, '""')}"`
+          : t.category;
+        return `${t.date},${sanitizedCategory},${t.amount},${sanitizedDesc}`;
       })
       .join('\n');
 

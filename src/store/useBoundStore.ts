@@ -84,7 +84,7 @@ export const useBoundStore = create<FinanceStore>()(
           // Load recent transactions for Recent Transactions screen
           const recentTxs = await TransactionRepository.getLastN(20);
           const txIds: number[] = [];
-          const txEntities: Record<number, any> = {};
+          const txEntities: Record<number, Transaction> = {};
           recentTxs.forEach((tx) => {
             txIds.push(tx.id);
             txEntities[tx.id] = tx;

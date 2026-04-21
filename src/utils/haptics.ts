@@ -9,7 +9,7 @@ export interface HapticService {
 }
 
 class Haptics implements HapticService {
-  private isHapticsSupported = Platform.OS === 'android'; // Android has better haptic support
+  private isHapticsSupported = Platform.OS === 'android' || Platform.OS === 'ios'; // Both platforms support haptics
 
   // Get enabled state from store
   get enabled(): boolean {
