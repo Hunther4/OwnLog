@@ -189,6 +189,12 @@ class SQLiteEngine {
     if (catCount?.count === 0) {
       console.log('[SQLiteEngine] 📦 Categories table empty, seeding...');
 
+      // Guard: ensure db is ready
+      if (!this.db) {
+        console.log('[SQLiteEngine] ⚠️ DB not ready for seeding, skipping');
+        return;
+      }
+
       // Use direct execution to bypass batching during initialization
       // WARNING: This must use direct db.execAsync to ensure writes complete
       for (const cat of defaults) {

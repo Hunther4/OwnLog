@@ -55,6 +55,12 @@ export const useBoundStore = create<FinanceStore>()(
 
       incrementAppOpens: async () => {
         try {
+          // Guard: skip if DB not initialized
+          const state = get();
+          if (!state.isDbInitialized) {
+            console.log('[useBoundStore] DB not initialized, skipping incrementAppOpens');
+            return 0;
+          }
           const row = await SettingsRepository.getSetting('app_open_count');
           const currentCount = row ? parseInt(row, 10) : 0;
           const newCount = currentCount + 1;
@@ -68,6 +74,13 @@ export const useBoundStore = create<FinanceStore>()(
       // Hybrid hydration: restore from AsyncStorage (zustand persist) then sync from SQLite
       hydrate: async () => {
         try {
+          // Guard: skip if already hydrating or DB not ready
+          const state = get();
+          if (state.isInitializing || state.isDbInitialized) {
+            console.log('[useBoundStore] Already initialized or initializing, skipping hydrate');
+            return;
+          }
+          
           // Sync balance from SQLite to ensure consistency (source of truth)
           const balance = await TransactionRepository.getTotalBalance();
           const cachedBalance = await SettingsRepository.getSetting('cached_balance');

@@ -99,4 +99,8 @@ export const theme = {
   },
 };
 
-export const getPalette = (mode: ThemeMode): ThemePalette => palettes[mode];
+export const getPalette = (mode: ThemeMode): ThemePalette => {
+  const palette = palettes[mode];
+  // Fallback to dark if mode is invalid or undefined
+  return palette ?? palettes.dark;
+};

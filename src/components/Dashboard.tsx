@@ -289,7 +289,7 @@ export default function Dashboard() {
   }
 
   // Recent transactions - horizontal scroll
-  const txList = transactions.ids
+  const txList = transactions?.ids
     ? transactions.ids
         .slice(0, 20)
         .map((id) => transactions.entities[id])
