@@ -1,4 +1,5 @@
 import * as FileSystem from 'expo-file-system';
+import { documentDirectory, cacheDirectory } from 'expo-file-system/legacy';
 import { AuthService } from './AuthService';
 
 /**
@@ -21,8 +22,8 @@ export class DriveSyncService {
         return { success: false, message: 'User not authenticated. Please login first.' };
       }
 
-      // Using (FileSystem as any) to bypass LSP type errors while maintaining standard Expo API usage
-      const dbPath = (FileSystem as any).documentDirectory + this.BACKUP_FILE_NAME;
+      // Use legacy documentDirectory constant
+      const dbPath = (documentDirectory ?? '') + this.BACKUP_FILE_NAME;
       const fileInfo = await FileSystem.getInfoAsync(dbPath);
       
       if (!fileInfo.exists) {
@@ -81,7 +82,7 @@ export class DriveSyncService {
       }
 
       // 2. Define temporary path for the download
-      const tempPath = (FileSystem as any).cacheDirectory + 'hunther_wallet_temp.db';
+      const tempPath = (cacheDirectory ?? '') + 'hunther_wallet_temp.db';
 
       // 3. Download binary content
       const downloadResult = await FileSystem.downloadAsync(
@@ -120,7 +121,7 @@ export class DriveSyncService {
     if (!response.ok) throw new Error('Failed to search for backup file');
     
     const data = await response.json();
-    return data.files.length > 0 ? data.files[0].id : null;
+    return data.files?.[0]?.id ?? null;
   }
 
   /**

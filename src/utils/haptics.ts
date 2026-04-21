@@ -11,14 +11,22 @@ export interface HapticService {
 class Haptics implements HapticService {
   private isHapticsSupported = Platform.OS === 'android' || Platform.OS === 'ios'; // Both platforms support haptics
 
-  // Get enabled state from store
+  // Get enabled state from store - with guard for uninitialized store
   get enabled(): boolean {
-    return useFinanceStore.getState().hapticsEnabled;
+    try {
+      return useFinanceStore.getState()?.hapticsEnabled ?? false;
+    } catch {
+      return false;
+    }
   }
 
-  // Set enabled state in store
+  // Set enabled state in store - with guard for uninitialized store
   set enabled(value: boolean) {
-    useFinanceStore.getState().setHapticsEnabled(value);
+    try {
+      useFinanceStore.getState()?.setHapticsEnabled(value);
+    } catch {
+      // Store not ready, ignore
+    }
   }
 
   async trigger(type: HapticType): Promise<void> {

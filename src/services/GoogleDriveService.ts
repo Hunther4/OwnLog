@@ -155,7 +155,7 @@ export const GoogleDriveService = {
       if (data.refresh_token) {
         await SecureStore.setItemAsync('google_drive_refresh_token', data.refresh_token);
       }
-      return accessToken!;
+      return accessToken ?? '';
     } catch (error) {
       // Refresh failed, clear auth state
       useBackupStore.getState().setCloudAuthStatus('error');
