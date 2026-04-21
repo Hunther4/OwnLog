@@ -19,7 +19,6 @@ import type { Currency } from '../types/master';
 import * as Haptics from 'expo-haptics';
 import TransactionList from './TransactionList';
 import { TransactionRepository } from '../repositories/TransactionRepository';
-import type { ThemePalette } from '../theme/theme';
 
 /**
  * DashboardSkeleton - Loading placeholder

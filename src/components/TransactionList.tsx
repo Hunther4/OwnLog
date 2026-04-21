@@ -110,17 +110,14 @@ export default function TransactionList({
     setFilters({ startDate, endDate });
   };
 
-const onStartDateChange = (event: DateTimePickerEvent, date?: Date) => {
+  const onStartDateChange = (event: DateTimePickerEvent, date?: Date) => {
     setShowStartPicker(false);
-    if (date) setStartDate(date);
+    if (date) {
+      setStartDate(date);
+    }
   };
 
   const onEndDateChange = (event: DateTimePickerEvent, date?: Date) => {
-    setShowEndPicker(false);
-    if (date) setEndDate(date);
-  };
-
-  const onEndDateChange = (event: any, date?: Date) => {
     setShowEndPicker(false);
     if (date) {
       setTempEndDate(date);
