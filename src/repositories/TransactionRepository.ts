@@ -116,7 +116,7 @@ export const TransactionRepository = {
         COALESCE(SUM(CASE WHEN c.tipo = 'egreso' THEN t.monto ELSE 0 END), 0) as expense
       FROM transacciones t
       INNER JOIN categorias c ON t.categoria_id = c.id
-      WHERE t.is_deleted = 0 AND c.activa = 1 AND fecha_local >= ? AND fecha_local <= ?
+      WHERE t.is_deleted = 0 AND fecha_local >= ? AND fecha_local <= ?
     `,
       [firstDay, lastDay]
     );

@@ -2,7 +2,7 @@
   "expo": {
     "name": "OwnLog",
     "slug": "hunther-wallet",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "scheme": "com.drack.ownlog",
     "android": {
       "package": "com.drack.ownlog",
@@ -24,7 +24,8 @@
     "extra": {
       "eas": {
         "projectId": "4deb6701-b9d0-4434-80df-970a17e7035d"
-      }
+      },
+      "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "967360905724-u1ibo9sep2sg0e8m2ng9o8736pfersrb.apps.googleusercontent.com"
     },
     "owner": "hunther4"
   }

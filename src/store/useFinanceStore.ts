@@ -668,14 +668,14 @@ export const useFinanceStore = create<FinanceStore>()((set, get) => ({
         .toISOString()
         .split('T')[0];
 
-      const sql = `
-        SELECT 
-          SUM(CASE WHEN c.tipo = 'ingreso' THEN t.monto ELSE 0 END) as income,
-          SUM(CASE WHEN c.tipo = 'egreso' THEN t.monto ELSE 0 END) as expense
-        FROM transacciones t
-        JOIN categorias c ON t.categoria_id = c.id
-        WHERE t.fecha_local >= ? AND t.fecha_local <= ?
-      `;
+const sql = `
+          SELECT 
+            COALESCE(SUM(CASE WHEN c.tipo = 'ingreso' THEN t.monto ELSE 0 END), 0) as income,
+            COALESCE(SUM(CASE WHEN c.tipo = 'egreso' THEN t.monto ELSE 0 END), 0) as expense
+          FROM transacciones t
+          JOIN categorias c ON t.categoria_id = c.id
+          WHERE t.is_deleted = 0 AND t.fecha_local >= ? AND t.fecha_local <= ?
+        `;
 
       const result = await engine.getFirst<{ income: number; expense: number }>(sql, [
         firstDayOfMonth,

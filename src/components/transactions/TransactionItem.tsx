@@ -35,7 +35,10 @@ const TransactionItem = memo(({ id }: TransactionItemProps) => {
 
   if (!tx) return null;
 
-  const isIncome = tx.monto > 0;
+  // Get all categories to find the tipo for this transaction
+  const categories = useBoundStore((state) => state.categories);
+  const category = categories?.find((c) => c.id === tx.categoria_id);
+  const isIncome = category?.tipo === 'ingreso';
 
   return (
     <Animated.View

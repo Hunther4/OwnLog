@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { getPalette, ThemePalette } from '../theme/theme';
-import { useFinanceStore } from '../store/useFinanceStore';
+import { useBoundStore } from '../store/useBoundStore';
 
 // Types
 interface DockItemProps {
@@ -79,11 +79,11 @@ interface FloatingDockProps {
 }
 
 // Liquid Gold - Premium Navigation Bar with 2-row structure
-// Note: themeMode is subscribed directly from store to ensure re-renders on theme changes
+// Uses useBoundStore for theme to ensure persistence (vs useFinanceStore which has no persistence)
 function FloatingDock({ onNavigate, currentRoute = '/' }: FloatingDockProps) {
-  // Subscribe to theme changes directly from store
-  const themeMode = useFinanceStore((state) => state.themeMode);
-  const palette = getPalette(themeMode || 'light');
+  // Subscribe to theme changes from useBoundStore (which has persistence)
+  const themeMode = useBoundStore((state) => state.themeMode);
+  const palette = getPalette(themeMode || 'dark');
   const insets = useSafeAreaInsets();
   
   const [isExpanded, setIsExpanded] = useState(false); // Segunda fila expandida/retraída
