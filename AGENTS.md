@@ -44,7 +44,6 @@ HuntherWallet is a personal financial notebook, offline-first, designed for low-
 
 | Variable | Description | How to Obtain |
 |----------|-------------|---------------|
-| `EXPO_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth Client ID for Drive backup | [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → Create OAuth 2.0 Client ID |
 | `SENTRY_DSN` | Sentry DSN for error monitoring (optional) | [Sentry Project Settings](https://sentry.io/settings/) → Keys |
 
 ### Setup Instructions
@@ -56,7 +55,6 @@ HuntherWallet is a personal financial notebook, offline-first, designed for low-
 
 2. **Fill in the values in `.env`:**
    ```env
-   EXPO_PUBLIC_GOOGLE_CLIENT_ID=your_client_id_here
    SENTRY_DSN=your_sentry_dsn_here
    ```
 
@@ -66,7 +64,7 @@ HuntherWallet is a personal financial notebook, offline-first, designed for low-
 
 ### How It Works
 
-- **`src/utils/config.ts`**: Use `getConfig('EXPO_PUBLIC_GOOGLE_CLIENT_ID', true)` to read variables
+- **`src/utils/config.ts`**: Use `getConfig('SENTRY_DSN')` to read variables (returns `undefined` if not set)
 - **Babel Plugin**: `babel-plugin-transform-inline-environment-variables` replaces `process.env.*` at build time
 - **Expo**: Variables prefixed with `EXPO_PUBLIC_` are automatically exposed to the bundle
 - **Fallback**: Config reads from `Constants.expoConfig.extra` first, then `process.env`
@@ -76,11 +74,8 @@ HuntherWallet is a personal financial notebook, offline-first, designed for low-
 ```typescript
 import { getConfig } from '../utils/config';
 
-// Read required variable (throws if missing)
-const clientId = getConfig('EXPO_PUBLIC_GOOGLE_CLIENT_ID', true);
-
-// Read optional variable
-const sentryDsn = getConfig('SENTRY_DSN'); // returns undefined if not set
+// Read optional variable (returns undefined if not set)
+const sentryDsn = getConfig('SENTRY_DSN');
 ```
 
 ## Git & Commit Policy
