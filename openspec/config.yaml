@@ -1,0 +1,62 @@
+# openspec/config.yaml
+schema: spec-driven
+
+context: |
+  Tech stack: Expo, React Native, TypeScript, SQLite, Zustand
+  Architecture: Screens, components, services, stores (Zustand), expo-router navigation
+  Testing: Jest with @testing-library/react-native for unit and integration tests
+  Style: ESLint + Prettier, TypeScript strict mode
+
+strict_tdd: true
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Identify affected modules/packages
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group tasks by phase (infrastructure, implementation, testing)
+    - Use hierarchical numbering (1.1, 1.2, etc.)
+    - Keep tasks small enough to complete in one session
+  apply:
+    - Follow existing code patterns and conventions
+    - Load relevant coding skills for the project stack
+  verify:
+    - Run tests if test infrastructure exists
+    - Compare implementation against every spec scenario
+  archive:
+    - Warn before merging destructive deltas (large removals)
+
+testing:
+  strict_tdd_mode: true
+  test_runner:
+    command: npm test
+    framework: Jest
+  layers:
+    unit:
+      available: true
+      tool: Jest
+    integration:
+      available: true
+      tool: "@testing-library/react-native"
+    e2e:
+      available: false
+      tool: null
+  coverage:
+    available: true
+    command: npm test -- --coverage
+  quality_tools:
+    linter:
+      available: true
+      command: npm run lint
+    type_checker:
+      available: true
+      command: tsc --noEmit
+    formatter:
+      available: true
+      command: npm run format

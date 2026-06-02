@@ -1,0 +1,162 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBoundStore } from '../../src/store/useBoundStore';
+import { getPalette } from '../../src/theme/theme';
+
+interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+const FAQS: FAQItem[] = [
+  {
+    question: '¿Dónde están mis datos?',
+    answer: 'Tus datos viven exclusivamente en tu teléfono. HuntherWallet no tiene servidores propios; somos una herramienta de soberanía de datos.',
+  },
+  {
+    question: '¿Cómo funciona el respaldo?',
+    answer: 'Usamos el appDataFolder de Google Drive. Es un espacio privado donde solo tu app puede escribir y leer. Tus datos se suben en formato binario cifrado por el sistema operativo.',
+  },
+  {
+    question: '¿Qué pasa si pierdo mi teléfono?',
+    answer: 'Si activaste la sincronización con Google Drive, basta con instalar la app en el nuevo dispositivo y conectar tu cuenta para recuperar toda tu base de datos.',
+  },
+  {
+    question: '¿Por qué no hay cuentas de banco?',
+    answer: 'Para garantizar la privacidad total. El registro manual fomenta la consciencia sobre el gasto y evita que terceras empresas analicen tu comportamiento financiero.',
+  },
+  {
+    question: '¿Es seguro usar Google Drive?',
+    answer: 'Sí, ya que utilizamos el almacenamiento aislado de aplicaciones. Google no puede leer el contenido de los archivos almacenados en el appDataFolder.',
+  },
+];
+
+export default function HelpScreen() {
+  const themeMode = useBoundStore((state) => state.themeMode);
+  const palette = getPalette(themeMode);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.background }]}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text allowFontScaling style={[styles.header, { color: palette.text }]}>
+          Centro de Ayuda
+        </Text>
+        
+        <View style={[styles.introCard, { backgroundColor: palette.card }]}>
+          <Text style={[styles.introTitle, { color: palette.primary }]}>Soberanía de Datos 🛡️</Text>
+          <Text style={[styles.introText, { color: palette.text }]}>
+            HuntherWallet fue diseñada bajo la premisa de que TÚ eres el único dueño de tu información financiera. 
+            No hay cuentas de usuario, no hay servidores centrales y no hay rastreadores.
+          </Text>
+        </View>
+
+        <Text allowFontScaling style={[styles.sectionTitle, { color: palette.text }]}>
+          Preguntas Frecuentes
+        </Text>
+
+        {FAQS.map((faq, index) => (
+          <TouchableOpacity 
+            key={index} 
+            style={[styles.faqItem, { backgroundColor: palette.card, borderColor: palette.textSecondary + '33' }]}
+            onPress={() => setExpandedId(expandedId === index ? null : index)}
+          >
+            <View style={styles.faqHeader}>
+              <Text style={[styles.faqQuestion, { color: palette.text }]}>{faq.question}</Text>
+              <Text style={{ color: palette.textSecondary }}>{expandedId === index ? '▴' : '▾'}</Text>
+            </View>
+            {expandedId === index && (
+              <Text style={[styles.faqAnswer, { color: palette.textSecondary }]}>
+                {faq.answer}
+              </Text>
+            )}
+          </TouchableOpacity>
+        ))}
+
+        <View style={[styles.footer, { backgroundColor: palette.card }]}>
+          <Text style={[styles.footerText, { color: palette.textSecondary }]}>
+            Versión 1.0.0 • Hecho para la libertad financiera
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    padding: 20,
+  },
+  header: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  introCard: {
+    padding: 20,
+    borderRadius: 24,
+    marginBottom: 32,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  introTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  introText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  faqItem: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  faqHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  faqQuestion: {
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+    marginRight: 10,
+  },
+  faqAnswer: {
+    fontSize: 14,
+    marginTop: 12,
+    lineHeight: 20,
+  },
+  footer: {
+    marginTop: 32,
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+});

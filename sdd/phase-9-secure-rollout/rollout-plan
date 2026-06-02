@@ -1,0 +1,48 @@
+# Rollout Plan: Phase 9 - Secure Rollout & Observability
+
+## 1. Overview
+This plan outlines the strategic deployment of the Secure Rollout and Observability features of HuntherWallet, focusing on minimizing risk during the introduction of cloud backups and security stretching.
+
+## 2. Rollout Phases
+
+### Phase 1: Alpha (Internal Testing)
+**Target**: Internal development team and QA.
+**Duration**: 1 Week.
+**Focus**: Core functionality verification.
+- Verify PIN setup and recovery flow.
+- Verify cloud backup upload and restore in controlled environments.
+- Validate Sentry error reporting on simulated crashes.
+- **Exit Criteria**: All core "Happy Path" scenarios pass without critical errors.
+
+### Phase 2: Beta (Limited Release)
+**Target**: Selected group of trusted users (approx. 50-100).
+**Duration**: 2 Weeks.
+**Focus**: Real-world edge cases and network reliability.
+- Test backup/restore on various network speeds (3G, 4G, WiFi).
+- Verify behavior with diverse Google account types.
+- Monitor Sentry for unexpected exceptions in production-like environment.
+- **Exit Criteria**: 0% critical crashes during restore/backup and < 5% transient OAuth errors.
+
+### Phase 3: General Availability (Prod)
+**Target**: All users.
+**Duration**: Continuous.
+**Focus**: Stability and observability.
+- Gradual rollout (canary release if possible).
+- Full monitoring of TelemetryService and Sentry.
+- User feedback collection on the backup experience.
+
+## 3. Success KPIs (Key Performance Indicators)
+
+| KPI | Target | Measurement Tool |
+|-----|--------|------------------|
+| **Restore Integrity** | 100% Success | `PRAGMA integrity_check` logs / Sentry |
+| **Critical Crash Rate** | 0% | Sentry (Crash-free sessions) |
+| **OAuth Success Rate** | > 95% | TelemetryService `RESTORE_SUCCESS` / Fail events |
+| **Data Integrity** | 0% Loss | User reports & Balance checksum audits |
+| **Recovery Success** | 100% | `SecurityService.resetPinWithRecoveryKey` logs |
+
+## 4. Rollback Strategy
+In the event of a critical failure (e.g., widespread data loss during restore):
+1. **Immediate Action**: Disable the "Cloud Backup" feature via a remote config flag (if implemented) or emergency app update.
+2. **Recovery**: Instruct users to rely on local backups until the issue is resolved.
+3. **Analysis**: Use Sentry breadcrumbs and Telemetry logs to identify the root cause.

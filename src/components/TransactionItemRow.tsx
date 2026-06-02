@@ -1,0 +1,170 @@
+import React, { useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import { useBoundStore } from '../store/useBoundStore';
+import { getPalette } from '../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+import Haptics from '../utils/haptics';
+
+interface TransactionItemProps {
+  id: number;
+}
+
+/**
+ * TransactionItemRow - Used by screens that display transactions inline
+ * (e.g., search results, category drill-downs). 
+ * TransactionList uses its own TransactionItemInline for FlashList optimization.
+ */
+const TransactionItemRow = React.memo(({ id }: TransactionItemProps) => {
+  const tx = useBoundStore((state) => state.transactions.entities[id]);
+  const deleteTransaction = useBoundStore((state) => state.deleteTransaction);
+  const themeMode = useBoundStore((state) => state.themeMode);
+  const palette = getPalette(themeMode);
+
+  const handlePress = useCallback(() => {
+    Haptics.trigger('LIGHT');
+  }, []);
+
+  const handleDelete = useCallback(async () => {
+    Haptics.trigger('MEDIUM');
+    try {
+      await deleteTransaction(id);
+    } catch (e) {
+      console.error('Delete failed', e);
+    }
+  }, [id, deleteTransaction]);
+
+  if (!tx) return null;
+
+  // Get all categories to find the tipo for this transaction
+  const categories = useBoundStore((state) => state.categories);
+  const category = categories?.find((c) => c.id === tx.categoria_id);
+  const isIncome = category?.tipo === 'ingreso';
+
+  return (
+    <Animated.View
+      entering={FadeIn.duration(300)}
+      exiting={FadeOut.duration(200)}
+      layout={LinearTransition.springify().damping(15)}
+    >
+      <TouchableOpacity
+        style={[
+          styles.container,
+          themeMode === 'dark' ? styles.darkContainer : styles.lightContainer,
+        ]}
+        onPress={handlePress}
+      >
+        <View style={styles.leftSection}>
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: category?.color_hex || palette.primary },
+            ]}
+          >
+            <Text allowFontScaling style={styles.emoji}>
+              {tx.descripcion || '💰'}
+            </Text>
+          </View>
+          <View style={styles.textSection}>
+            <Text
+              allowFontScaling
+              style={[
+                styles.description,
+                themeMode === 'dark' ? styles.darkText : styles.lightText,
+              ]}
+              numberOfLines={1}
+            >
+              {tx.descripcion || 'Sin descripción'}
+            </Text>
+            <Text allowFontScaling style={styles.date}>
+              {tx.fecha_local}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.rightSection}>
+          <Text
+            allowFontScaling
+            style={[styles.amount, { color: isIncome ? palette.income : palette.expense }]}
+          >
+            {isIncome ? `+$${tx.monto}` : `-$${tx.monto}`}
+          </Text>
+          <TouchableOpacity
+            onPress={handleDelete}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="trash-outline" size={20} color={palette.delete} />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+});
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    padding: 12,
+    marginVertical: 4,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  lightContainer: {
+    backgroundColor: '#fff',
+  },
+  darkContainer: {
+    backgroundColor: '#18181b',
+  },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  emoji: {
+    fontSize: 20,
+  },
+  textSection: {
+    flex: 1,
+  },
+  description: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  lightText: {
+    color: '#333',
+  },
+  darkText: {
+    color: '#f4f4f5',
+  },
+  date: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+  },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  amount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
+
+export default TransactionItemRow;
