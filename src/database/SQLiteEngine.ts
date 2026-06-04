@@ -502,12 +502,14 @@ class SQLiteEngine {
     try {
       await this.executeInTransaction(async (db) => {
         for (const op of queue) {
-          try {
-            const result = await db.runAsync(op.sql, ...op.params);
-            results.push({ op, success: true, result });
-          } catch (e) {
-            results.push({ op, success: false, error: e });
-          }
+          // BUGFIX (silent partial commit): let errors propagate so
+          // executeInTransaction ROLLBACKS the whole batch (atomicity).
+          // Previously the inner try/catch swallowed the error, the
+          // transaction COMMITted the successful ops, and callers that
+          // retried the rejected op could create duplicates because the
+          // earlier ones were already persisted.
+          const result = await db.runAsync(op.sql, ...op.params);
+          results.push({ op, success: true, result });
         }
       });
     } catch (error) {
@@ -540,7 +542,7 @@ class SQLiteEngine {
   }
 
   public async getTransactions(
-    filters: { categoryId?: number | null; startDate?: string; endDate?: string } = {},
+    filters: { categoryId?: number | null; startDate?: string; endDate?: string; search?: string } = {},
     limit: number = 100,
     offset: number = 0
   ): Promise<TransactionRow[]> {
@@ -561,6 +563,10 @@ class SQLiteEngine {
     if (filters.endDate) {
       where.push('fecha_local <= ?');
       params.push(filters.endDate);
+    }
+    if (filters.search) {
+      where.push('descripcion LIKE ?');
+      params.push(`%${filters.search}%`);
     }
 
     sql += ' WHERE ' + where.join(' AND ');

@@ -112,6 +112,7 @@ export interface FinanceState {
     categoryId: number | null;
     startDate?: string;
     endDate?: string;
+    search?: string;
   };
   categories: Category[];
   quickActions: QuickAction[];
@@ -126,6 +127,7 @@ export interface FinanceState {
   };
   themeMode: ThemeMode;
   hapticsEnabled: boolean;
+  privacyMode: boolean;
   _lastTransactionTime: number;
   appOpenCount: number;
 }
@@ -141,11 +143,12 @@ export interface FinanceActions {
   prefetchPredictiveData: () => Promise<void>;
   fetchReports: () => Promise<void>;
   setFilters: (
-    newFilters: Partial<{ categoryId: number | null; startDate?: string; endDate?: string }>
+    newFilters: Partial<{ categoryId: number | null; startDate?: string; endDate?: string; search?: string }>
   ) => Promise<void>;
   setCurrency: (currency: Currency) => Promise<void>;
   setThemeMode: (mode: ThemeMode) => Promise<void>;
   setHapticsEnabled: (enabled: boolean) => Promise<void>;
+  setPrivacyMode: (value: boolean) => Promise<void>;
   syncBalance: () => Promise<void>;
   loadQuickActions: () => Promise<void>;
   updateQuickAction: (id: number, updates: Partial<QuickAction>) => Promise<void>;

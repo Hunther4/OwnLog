@@ -29,12 +29,28 @@ export default function CalcScreen() {
     Haptics.notify('NOTIFICATION_SUCCESS');
     try {
       const fullEquation = equation + display;
-      // Use Function instead of eval for slightly better safety in this context
-      const result = new Function(`return ${fullEquation}`)();
+      // SECURITY: whitelist-only evaluation. We allow digits, whitespace, the four
+      // basic operators (+, -, *, /), parentheses, and dots. Anything else
+      // (semicolons, function calls, etc.) is rejected before any dynamic
+      // evaluation. This closes the RCE on `new Function(\`return ${x}\`)()`
+      // that previously allowed arbitrary code execution from a crafted
+      // display/equation value.
+      if (!/^[\d\s+\-*/().]+$/.test(fullEquation)) {
+        setDisplay('Error');
+        setEquation('');
+        return;
+      }
+      const result = new Function(`return (${fullEquation})`)();
+      if (typeof result !== 'number' || !isFinite(result)) {
+        setDisplay('Error');
+        setEquation('');
+        return;
+      }
       setDisplay(result.toString());
       setEquation('');
     } catch (e) {
       setDisplay('Error');
+      setEquation('');
     }
   };
 

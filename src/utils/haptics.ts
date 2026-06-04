@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform, AccessibilityInfo } from 'react-native';
 import * as expoHaptics from 'expo-haptics';
 import { useBoundStore } from '../store/useBoundStore';
 
@@ -7,6 +7,32 @@ export type HapticNotification = 'NOTIFICATION_SUCCESS' | 'NOTIFICATION_ERROR' |
 
 class Haptics {
   private isHapticsSupported = Platform.OS === 'android' || Platform.OS === 'ios';
+  private reduceMotionEnabled = false;
+  private reduceMotionSubscription: ReturnType<typeof AccessibilityInfo.addEventListener> | null = null;
+
+  constructor() {
+    this.setupReduceMotion();
+  }
+
+  private setupReduceMotion(): void {
+    try {
+      AccessibilityInfo.isReduceMotionEnabled()
+        .then((value) => {
+          this.reduceMotionEnabled = value;
+        })
+        .catch(() => {
+          this.reduceMotionEnabled = false;
+        });
+      this.reduceMotionSubscription = AccessibilityInfo.addEventListener(
+        'reduceMotionChanged',
+        (value) => {
+          this.reduceMotionEnabled = value;
+        },
+      );
+    } catch {
+      this.reduceMotionEnabled = false;
+    }
+  }
 
   get enabled(): boolean {
     try {
@@ -29,7 +55,7 @@ class Haptics {
    * The native module resolves its own promise — no need to await on the JS side.
    */
   trigger(type: HapticType): void {
-    if (!this.enabled || !this.isHapticsSupported) return;
+    if (!this.enabled || !this.isHapticsSupported || this.reduceMotionEnabled) return;
     try {
       switch (type) {
         case 'SUCCESS':
@@ -54,7 +80,7 @@ class Haptics {
    * Fire-and-forget haptic notification. Returns immediately.
    */
   notify(type: HapticNotification): void {
-    if (!this.enabled || !this.isHapticsSupported) return;
+    if (!this.enabled || !this.isHapticsSupported || this.reduceMotionEnabled) return;
     try {
       switch (type) {
         case 'NOTIFICATION_SUCCESS':
@@ -70,6 +96,30 @@ class Haptics {
     } catch {
       // Silently fail
     }
+  }
+
+  /**
+   * Lightweight selection feedback for picker changes, switch toggles, etc.
+   */
+  selection(): void {
+    if (!this.enabled || !this.isHapticsSupported) return;
+    try {
+      void expoHaptics.selectionAsync();
+    } catch {
+      // Silently fail
+    }
+  }
+
+  success(): void {
+    this.notify('NOTIFICATION_SUCCESS');
+  }
+
+  warning(): void {
+    this.notify('NOTIFICATION_WARNING');
+  }
+
+  error(): void {
+    this.notify('NOTIFICATION_ERROR');
   }
 }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,32 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBoundStore } from '../../src/store/useBoundStore';
 import { getPalette } from '../../src/theme/theme';
 import Haptics from '../../src/utils/haptics';
 import { Category } from '../../src/types/master';
+
+type FormState = {
+  nombre: string;
+  tipo: 'ingreso' | 'egreso';
+  emoji: string;
+  color_hex: string;
+  activa: boolean;
+};
+
+const EMPTY_FORM: FormState = {
+  nombre: '',
+  tipo: 'egreso',
+  emoji: '💰',
+  color_hex: '#6366f1',
+  activa: true,
+};
+
+const EMOJI_CHOICES = ['💰', '🛒', '🍔', '🚗', '🏠', '💊', '🎬', '✈️', '📚', '💼', '🎁', '☕'];
+const COLOR_CHOICES = ['#6366f1', '#ef4444', '#10b981', '#f59e0b', '#3b82f6', '#a855f7', '#ec4899', '#14b8a6'];
 
 export default function CategoriesScreen() {
   const themeMode = useBoundStore((state) => state.themeMode);
@@ -26,58 +46,87 @@ export default function CategoriesScreen() {
   const palette = getPalette(themeMode);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [newCat, setNewCat] = useState({
-    nombre: '',
-    tipo: 'egreso' as 'ingreso' | 'egreso',
-    emoji: '💰',
-    color_hex: '#6366f1',
-    activa: true,
-  });
   const [editingCat, setEditingCat] = useState<Category | null>(null);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
 
-  const handleAdd = async () => {
-    if (!newCat.nombre.trim()) {
+  const isEditing = editingCat !== null;
+
+  // Keep the form synced with the category being edited (or reset when adding)
+  useEffect(() => {
+    if (editingCat) {
+      setForm({
+        nombre: editingCat.nombre,
+        tipo: editingCat.tipo,
+        emoji: editingCat.emoji,
+        color_hex: editingCat.color_hex,
+        activa: editingCat.activa,
+      });
+    } else {
+      setForm(EMPTY_FORM);
+    }
+  }, [editingCat]);
+
+  const openNewModal = () => {
+    setEditingCat(null);
+    setIsModalVisible(true);
+  };
+
+  const openEditModal = (cat: Category) => {
+    setEditingCat(cat);
+    setIsModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setIsModalVisible(false);
+    setEditingCat(null);
+  };
+
+  const handleSave = async () => {
+    if (!form.nombre.trim()) {
       Alert.alert('Error', 'El nombre es requerido');
       return;
     }
     try {
-      await addCategory(newCat);
-      setNewCat({
-        nombre: '',
-        tipo: 'egreso',
-        emoji: '💰',
-        color_hex: '#6366f1',
-        activa: true,
-      });
-      setIsModalVisible(false);
+      if (isEditing && editingCat) {
+        await updateCategory(editingCat.id, form);
+      } else {
+        await addCategory(form);
+      }
       Haptics.notify('NOTIFICATION_SUCCESS');
+      closeModal();
     } catch (e) {
-      Alert.alert('Error', 'No se pudo agregar');
+      Alert.alert('Error', isEditing ? 'No se pudo actualizar' : 'No se pudo agregar');
     }
+  };
+
+  const handleDelete = (cat: Category) => {
+    Haptics.trigger('MEDIUM');
+    Alert.alert('Eliminar', `¿Eliminar ${cat.nombre}?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteCategory(cat.id);
+          Haptics.notify('NOTIFICATION_SUCCESS');
+        },
+      },
+    ]);
   };
 
   const renderItem = ({ item }: { item: Category }) => (
     <TouchableOpacity
       style={[styles.card, { backgroundColor: palette.card, borderColor: palette.border }]}
-      onPress={() => setEditingCat(item)}
-      onLongPress={() => {
-        Haptics.trigger('MEDIUM');
-        Alert.alert('Eliminar', `¿Eliminar ${item.nombre}?`, [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Eliminar', style: 'destructive', onPress: async () => {
-            await deleteCategory(item.id);
-            Haptics.notify('NOTIFICATION_SUCCESS');
-          }},
-        ]);
-      }}
+      onPress={() => openEditModal(item)}
+      onLongPress={() => handleDelete(item)}
     >
-        <Text allowFontScaling style={styles.emoji}>{item.emoji}</Text>
-        <View style={styles.cardContent}>
-          <Text allowFontScaling style={[styles.nombre, { color: palette.text }]}>{item.nombre}</Text>
-          <Text allowFontScaling style={[styles.tipo, { color: item.tipo === 'ingreso' ? palette.income : palette.expense }]}>
-            {item.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'}
-          </Text>
-        </View>
+      <Text allowFontScaling style={styles.emoji}>{item.emoji}</Text>
+      <View style={styles.cardContent}>
+        <Text allowFontScaling style={[styles.nombre, { color: palette.text }]}>{item.nombre}</Text>
+        <Text allowFontScaling style={[styles.tipo, { color: item.tipo === 'ingreso' ? palette.income : palette.expense }]}>
+          {item.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 
@@ -98,53 +147,96 @@ export default function CategoriesScreen() {
 
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: palette.primary }]}
-        onPress={() => setIsModalVisible(true)}
+        onPress={openNewModal}
       >
         <Text allowFontScaling style={[styles.fabText, { color: palette.white }]}>+</Text>
       </TouchableOpacity>
 
-      <Modal visible={isModalVisible} animationType="slide" transparent>
+      <Modal visible={isModalVisible} animationType="slide" transparent onRequestClose={closeModal}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
         >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: palette.card }]}>
-            <Text allowFontScaling style={[styles.modalTitle, { color: palette.text }]}>Nueva Categoría</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: palette.background, color: palette.text, borderColor: palette.border }]}
-              placeholder="Nombre"
-              placeholderTextColor={palette.textSecondary}
-              value={newCat.nombre}
-              onChangeText={(t) => setNewCat({ ...newCat, nombre: t })}
-            />
-            <View style={styles.tipoButtons}>
-              {(() => {
-                const options = [];
-                for (const t of (['egreso', 'ingreso'] as const)) {
-                  options.push(
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: palette.card }]}>
+              <ScrollView keyboardShouldPersistTaps="handled">
+                <Text allowFontScaling style={[styles.modalTitle, { color: palette.text }]}>
+                  {isEditing ? 'Editar Categoría' : 'Nueva Categoría'}
+                </Text>
+
+                <Text allowFontScaling style={[styles.label, { color: palette.textSecondary }]}>Nombre</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: palette.background, color: palette.text, borderColor: palette.border }]}
+                  placeholder="Nombre"
+                  placeholderTextColor={palette.textSecondary}
+                  value={form.nombre}
+                  onChangeText={(t) => setForm({ ...form, nombre: t })}
+                />
+
+                <Text allowFontScaling style={[styles.label, { color: palette.textSecondary }]}>Tipo</Text>
+                <View style={styles.tipoButtons}>
+                  {(['egreso', 'ingreso'] as const).map((t) => (
                     <TouchableOpacity
                       key={t}
-                      style={[styles.tipoBtn, newCat.tipo === t && { backgroundColor: t === 'ingreso' ? palette.income : palette.expense }]}
-                      onPress={() => setNewCat({ ...newCat, tipo: t })}
+                      style={[
+                        styles.tipoBtn,
+                        form.tipo === t && { backgroundColor: t === 'ingreso' ? palette.income : palette.expense },
+                      ]}
+                      onPress={() => setForm({ ...form, tipo: t })}
                     >
-                      <Text style={styles.tipoBtnText}>{t === 'ingreso' ? 'Ingreso' : 'Egreso'}</Text>
+                      <Text style={[styles.tipoBtnText, form.tipo === t && { color: '#fff' }]}>
+                        {t === 'ingreso' ? 'Ingreso' : 'Egreso'}
+                      </Text>
                     </TouchableOpacity>
-                  );
-                }
-                return options;
-              })()}
-            </View>
-            <View style={styles.modalActions}>
-              <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Text style={{ color: palette.textSecondary }}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: palette.primary }]} onPress={handleAdd}>
-                <Text style={styles.saveBtnText}>Guardar</Text>
-              </TouchableOpacity>
+                  ))}
+                </View>
+
+                <Text allowFontScaling style={[styles.label, { color: palette.textSecondary }]}>Emoji</Text>
+                <View style={styles.choicesRow}>
+                  {EMOJI_CHOICES.map((e) => (
+                    <TouchableOpacity
+                      key={e}
+                      style={[
+                        styles.choiceChip,
+                        { backgroundColor: palette.background, borderColor: palette.border },
+                        form.emoji === e && { backgroundColor: palette.primary + '33', borderColor: palette.primary },
+                      ]}
+                      onPress={() => setForm({ ...form, emoji: e })}
+                    >
+                      <Text allowFontScaling style={styles.choiceEmoji}>{e}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <Text allowFontScaling style={[styles.label, { color: palette.textSecondary }]}>Color</Text>
+                <View style={styles.choicesRow}>
+                  {COLOR_CHOICES.map((c) => (
+                    <TouchableOpacity
+                      key={c}
+                      style={[
+                        styles.colorSwatch,
+                        { backgroundColor: c },
+                        form.color_hex === c && { borderColor: palette.text, borderWidth: 3 },
+                      ]}
+                      onPress={() => setForm({ ...form, color_hex: c })}
+                    />
+                  ))}
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity onPress={closeModal}>
+                  <Text style={{ color: palette.textSecondary }}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.saveBtn, { backgroundColor: palette.primary }]}
+                  onPress={handleSave}
+                >
+                  <Text style={styles.saveBtnText}>Guardar</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
         </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
@@ -163,13 +255,18 @@ const styles = StyleSheet.create({
   fab: { position: 'absolute', right: 20, bottom: 135, width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', elevation: 4 },
   fabText: { fontSize: 28 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { padding: 24, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  modalContent: { padding: 24, paddingBottom: 32, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%' },
   modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
-  input: { borderWidth: 1, borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 12 },
-  tipoButtons: { flexDirection: 'row', marginBottom: 16 },
+  label: { fontSize: 12, fontWeight: '600', marginTop: 12, marginBottom: 6, textTransform: 'uppercase' },
+  input: { borderWidth: 1, borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 4 },
+  tipoButtons: { flexDirection: 'row', marginBottom: 4 },
   tipoBtn: { flex: 1, padding: 12, borderRadius: 8, marginHorizontal: 4, alignItems: 'center' },
   tipoBtnText: { fontWeight: '600' },
-  modalActions: { flexDirection: 'row', justifyContent: 'space-between' },
+  choicesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  choiceChip: { width: 48, height: 48, borderRadius: 10, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  choiceEmoji: { fontSize: 22 },
+  colorSwatch: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
+  modalActions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 },
   saveBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
-  saveBtnText: { fontWeight: '600' },
+  saveBtnText: { color: '#fff', fontWeight: '600' },
 });

@@ -14,10 +14,12 @@ export const createUISlice: StateCreator<
     isDbInitialized: boolean;
     isInitializing: boolean;
     lastError: string | null;
+    privacyMode: boolean;
     setThemeMode: (mode: ThemeMode) => Promise<void>;
     setCurrency: (currency: Currency) => Promise<void>;
     setHapticsEnabled: (enabled: boolean) => Promise<void>;
     setDbInitialized: (value: boolean) => void;
+    setPrivacyMode: (value: boolean) => Promise<void>;
     clearError: () => void;
   }
 > = (set, get) => ({
@@ -27,6 +29,7 @@ export const createUISlice: StateCreator<
   isDbInitialized: false,
   isInitializing: false,
   lastError: null,
+  privacyMode: false,
 
   setThemeMode: async (mode) => {
     try {
@@ -53,6 +56,18 @@ export const createUISlice: StateCreator<
     } catch (error) {
       set({ lastError: 'Failed to save haptics preference' });
     }
+  },
+
+  setPrivacyMode: async (value) => {
+    // In-memory state always updates so the UI feels instant even if the
+    // persist call fails (e.g. before SQLite is ready). The try/catch keeps
+    // the app from surfacing a fatal error for a non-critical preference.
+    try {
+      await SettingsRepository.setSetting('privacy_mode', value ? 'true' : 'false');
+    } catch (error) {
+      console.warn('[uiSlice] Failed to persist privacy_mode setting:', error);
+    }
+    set({ privacyMode: value });
   },
 
   setDbInitialized: (value) => set({ isDbInitialized: value }),

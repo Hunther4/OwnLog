@@ -86,13 +86,19 @@ incrementAppOpens: async () => {
 
       // Hybrid hydration: restore from AsyncStorage (zustand persist) then sync from SQLite
       hydrate: async () => {
+        // Guard: skip if already hydrating
+        const state = get();
+        if (state.isInitializing || state.isDbInitialized) {
+          log('[useBoundStore] Already initialized or initializing, skipping hydrate');
+          return;
+        }
+        // BUGFIX (TOCTOU race): set isInitializing=true BEFORE any await so a
+        // second concurrent caller of hydrate() will hit the guard above
+        // and bail out. Previously, two parallel hydrates both passed the
+        // guard and the second `set()` could clobber the first.
+        set({ isInitializing: true, lastError: null });
+
         try {
-          // Guard: skip if already hydrating or DB not ready
-          const state = get();
-          if (state.isInitializing || state.isDbInitialized) {
-            log('[useBoundStore] Already initialized or initializing, skipping hydrate');
-            return;
-          }
 
           // OPTIMIZATION: parallelize independent reads. Two batches because
           // cached_balance is used to decide whether to write the new one back.

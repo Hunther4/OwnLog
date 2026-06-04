@@ -5,6 +5,7 @@ import { Stack, ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import * as ScreenCapture from 'expo-screen-capture';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import SQLiteEngine from '../src/database/SQLiteEngine';
 import { useBoundStore } from '../src/store/useBoundStore';
@@ -156,7 +157,10 @@ export default function Layout() {
         store.setDbInitialized(true);
 
         log('[Layout] 📈 Checking onboarding gate...');
-        if (store.appOpenCount <= 3) {
+        // BUGFIX (onboarding loop): the previous `<= 3` matched every launch
+        // because `incrementAppOpens` runs on every hydrate. With `< 3` the
+        // gate is shown for the first three app opens only.
+        if (store.appOpenCount < 3) {
           setShowOnboarding(true);
         }
 
@@ -199,6 +203,17 @@ export default function Layout() {
     });
 
     return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    ScreenCapture.preventScreenCaptureAsync().catch((e: unknown) => {
+      warn('[Layout] Screen capture prevention not supported:', e);
+    });
+    return () => {
+      ScreenCapture.allowScreenCaptureAsync().catch((e: unknown) => {
+        warn('[Layout] Screen capture allow failed:', e);
+      });
+    };
   }, []);
 
   useEffect(() => {

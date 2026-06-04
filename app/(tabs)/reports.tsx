@@ -34,9 +34,13 @@ const SkiaDonutChart = ({ data, palette }: { data: DonutData[]; palette: any }) 
   return (
     <Canvas style={{ width: 200, height: 200 }}>
       {data.map((item, index) => {
-        const startAngle = data.slice(0, index).reduce((sum, i) => sum + i.total, 0);
-        const angle = item.total / total;
-        
+        // BUGFIX (donut math): convert to degrees ONCE. Previously
+        // `(angle / total) * 360` divided by `total` a second time, producing
+        // arcs that were roughly `1/total` of the correct sweep.
+        const startAngleDeg =
+          (data.slice(0, index).reduce((sum, i) => sum + i.total, 0) / total) * 360;
+        const sweepAngleDeg = (item.total / total) * 360;
+
         return (
           <Path
             key={item.nombre}
@@ -45,7 +49,7 @@ const SkiaDonutChart = ({ data, palette }: { data: DonutData[]; palette: any }) 
               y: centerY - radius,
               width: radius * 2,
               height: radius * 2,
-            }, (startAngle / total) * 360, (angle / total) * 360 * progress.value)}
+            }, startAngleDeg, sweepAngleDeg * progress.value)}
             color={item.color}
             style="stroke"
             strokeWidth={thickness}
@@ -170,6 +174,31 @@ export default function ReportsScreen() {
           })()}
         </View>
       </ChartCard>
+
+      {reports.monthlyTrend.length > 0 && (
+        <ChartCard title="Tendencia Mensual (Neto)">
+          <View style={{ gap: 8 }}>
+            {reports.monthlyTrend.map((m) => {
+              const maxAbs = Math.max(...reports.monthlyTrend.map((x) => Math.abs(x.total)), 1);
+              const barWidth = Math.abs(m.total) / maxAbs * 100;
+              const barColor = m.total >= 0 ? palette.income : palette.expense;
+              return (
+                <View key={m.month} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text allowFontScaling style={{ color: palette.textSecondary, fontSize: 12, width: 60 }}>
+                    {m.month.slice(5)}
+                  </Text>
+                  <View style={{ flex: 1, height: 18, backgroundColor: palette.card, borderRadius: 4, overflow: 'hidden' }}>
+                    <View style={{ width: `${barWidth}%`, height: '100%', backgroundColor: barColor, borderRadius: 4 }} />
+                  </View>
+                  <Text allowFontScaling style={{ color: palette.text, fontSize: 12, fontWeight: '600', width: 80, textAlign: 'right' }}>
+                    {m.total >= 0 ? '+' : ''}{m.total.toLocaleString()}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </ChartCard>
+      )}
 
       <View style={[styles.infoCard, { backgroundColor: palette.textSecondary + '08', borderLeftColor: palette.primary }]}>
         <Text style={[styles.infoTitle, { color: palette.text }]}>Insight del Mes</Text>

@@ -79,10 +79,18 @@ export default function AddTransactionForm({ onSave }: { onSave: () => void }) {
       onSave();
 
       // Persist the transaction in the background (does not block navigation).
+      // BUGFIX (UTC drift): `date.toISOString()` converts to UTC, so for users
+      // west of UTC the resulting `fecha_local` could be the previous day.
+      // Use the local-time components of `date` to compute the local YYYY-MM-DD.
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const fechaLocal = `${year}-${month}-${day}`;
+
       void addTransaction({
         monto: numAmount,
         fecha_utc: date.toISOString(),
-        fecha_local: date.toISOString().split('T')[0],
+        fecha_local: fechaLocal,
         categoria_id: selectedCategoryId,
         descripcion: finalDescription,
       })

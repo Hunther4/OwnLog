@@ -8,7 +8,7 @@ import { Transaction, TransactionRow } from '../types/master';
  */
 export const TransactionRepository = {
   async getAll(
-    filters: { categoryId?: number | null; startDate?: string; endDate?: string } = {},
+    filters: { categoryId?: number | null; startDate?: string; endDate?: string; search?: string } = {},
     limit = 100,
     offset = 0
   ): Promise<Transaction[]> {

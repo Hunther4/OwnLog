@@ -21,6 +21,7 @@ import { formatCurrency } from '../utils/currencyFormatter';
 import type { Currency, QuickAction } from '../types/master';
 import Haptics from '../utils/haptics';
 import { TransactionRepository } from '../repositories/TransactionRepository';
+import { SettingsRepository } from '../repositories/SettingsRepository';
 
 /**
  * DashboardSkeleton - Loading placeholder
@@ -76,19 +77,40 @@ export const DashboardHeader = memo(
     const [editAmount, setEditAmount] = useState('');
     const [monthlyIncome, setMonthlyIncome] = useState(0);
     const [monthlyExpense, setMonthlyExpense] = useState(0);
+    const [showPeriodModal, setShowPeriodModal] = useState(false);
+    const [resetPeriodDays, setResetPeriodDays] = useState(0);
+    const transactionCount = useBoundStore((s) => s.transactions.ids.length);
 
     // Anti double-tap guard for instant expenses
     const lastQuickAddAtRef = useRef<number | null>(null);
 
+    // Fetch monthly totals + check auto-reset period
     useEffect(() => {
       const fetchMonthlyTotals = async () => {
         const monthYear = new Date().toISOString().slice(0, 7);
         const { income, expense } = await TransactionRepository.getMonthlyTotals(monthYear);
+
+        // Check auto-reset period
+        const savedPeriod = await SettingsRepository.getSetting('reset_period_days');
+        const savedUntil = await SettingsRepository.getSetting('reset_until_date');
+        const periodDays = savedPeriod ? parseInt(savedPeriod, 10) : 0;
+        setResetPeriodDays(periodDays);
+
+        if (periodDays > 0 && savedUntil) {
+          const untilMs = parseInt(savedUntil, 10);
+          if (Date.now() >= untilMs) {
+            // Period expired — show 0 for income/expense (balance unchanged)
+            setMonthlyIncome(0);
+            setMonthlyExpense(0);
+            return;
+          }
+        }
+
         setMonthlyIncome(income);
         setMonthlyExpense(expense);
       };
       fetchMonthlyTotals();
-    }, []);
+    }, [transactionCount]);
 
     const handleQuickAdd = useCallback(
       async (action: QuickAction) => {
@@ -161,23 +183,31 @@ export const DashboardHeader = memo(
         </View>
 
         <View style={[styles.summaryContainer, { backgroundColor: palette.card }]}>
-          <View style={styles.summaryItem}>
+          <TouchableOpacity
+            style={styles.summaryItem}
+            onLongPress={() => setShowPeriodModal(true)}
+            activeOpacity={0.7}
+          >
             <Text allowFontScaling style={[styles.summaryLabel, { color: palette.textSecondary }]}>
               Ingresos
             </Text>
             <Text allowFontScaling style={[styles.summaryValueIncome, { color: palette.income }]}>
               {formatCurrency(monthlyIncome, currency)}
             </Text>
-          </View>
+          </TouchableOpacity>
           <View style={styles.summaryDivider} />
-          <View style={styles.summaryItem}>
+          <TouchableOpacity
+            style={styles.summaryItem}
+            onLongPress={() => setShowPeriodModal(true)}
+            activeOpacity={0.7}
+          >
             <Text allowFontScaling style={[styles.summaryLabel, { color: palette.textSecondary }]}>
               Egresos
             </Text>
             <Text allowFontScaling style={[styles.summaryValueExpense, { color: palette.expense }]}>
               {formatCurrency(monthlyExpense, currency)}
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity
@@ -289,6 +319,66 @@ export const DashboardHeader = memo(
               </View>
             </ScrollView>
           </KeyboardAvoidingView>
+        </Modal>
+
+        <Modal visible={showPeriodModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: palette.card }]}>
+              <Text allowFontScaling style={[styles.modalTitle, { color: palette.text }]}>
+                Reinicio de Ingresos/Egresos
+              </Text>
+              <Text allowFontScaling style={{ color: palette.textSecondary, marginBottom: 16 }}>
+                Los contadores de ingresos y egresos volverán a 0 al cumplirse el período. El saldo total no se modifica.
+              </Text>
+              {([
+                { label: '1 día', days: 1 },
+                { label: '7 días', days: 7 },
+                { label: '15 días', days: 15 },
+                { label: '1 mes (30 días)', days: 30 },
+              ]).map((opt) => (
+                <TouchableOpacity
+                  key={opt.days}
+                  style={[
+                    styles.periodOption,
+                    { borderColor: palette.border || palette.textSecondary + '33' },
+                    resetPeriodDays === opt.days && { backgroundColor: palette.primary + '20', borderColor: palette.primary },
+                  ]}
+                  onPress={async () => {
+                    const untilDate = Date.now() + opt.days * 24 * 60 * 60 * 1000;
+                    await SettingsRepository.setSetting('reset_period_days', opt.days.toString());
+                    await SettingsRepository.setSetting('reset_until_date', untilDate.toString());
+                    setResetPeriodDays(opt.days);
+                    Haptics.notify('NOTIFICATION_SUCCESS');
+                  }}
+                >
+                  <Text allowFontScaling style={{ color: palette.text, fontWeight: '600' }}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              {resetPeriodDays > 0 && (
+                <TouchableOpacity
+                  style={[styles.periodOption, { borderColor: palette.delete, marginTop: 8 }]}
+                  onPress={async () => {
+                    await SettingsRepository.setSetting('reset_period_days', '0');
+                    await SettingsRepository.setSetting('reset_until_date', '0');
+                    setResetPeriodDays(0);
+                    Haptics.notify('NOTIFICATION_WARNING');
+                  }}
+                >
+                  <Text allowFontScaling style={{ color: palette.delete, fontWeight: '600' }}>
+                    Desactivar reinicio automático
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: palette.primary, marginTop: 16 }]}
+                onPress={() => setShowPeriodModal(false)}
+              >
+                <Text allowFontScaling style={styles.modalButtonText}>Cerrar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </Modal>
       </View>
     );
@@ -597,5 +687,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  periodOption: {
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 8,
+    alignItems: 'center',
   },
 });

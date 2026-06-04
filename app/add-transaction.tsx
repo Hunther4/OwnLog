@@ -12,7 +12,7 @@ export default function AddTransactionScreen() {
   const palette = getPalette(themeMode);
 
   const handleSave = () => {
-    router.replace('/(tabs)/transactions');
+    router.back();
   };
 
   return (

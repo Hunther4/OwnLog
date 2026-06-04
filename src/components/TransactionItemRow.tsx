@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import { useRouter } from 'expo-router';
 import { useBoundStore } from '../store/useBoundStore';
 import { getPalette } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +17,7 @@ interface TransactionItemProps {
  * TransactionList uses its own TransactionItemInline for FlashList optimization.
  */
 const TransactionItemRow = React.memo(({ id }: TransactionItemProps) => {
+  const router = useRouter();
   const tx = useBoundStore((state) => state.transactions.entities[id]);
   const deleteTransaction = useBoundStore((state) => state.deleteTransaction);
   const themeMode = useBoundStore((state) => state.themeMode);
@@ -23,7 +25,8 @@ const TransactionItemRow = React.memo(({ id }: TransactionItemProps) => {
 
   const handlePress = useCallback(() => {
     Haptics.trigger('LIGHT');
-  }, []);
+    router.push(`/edit-transaction?id=${id}`);
+  }, [id, router]);
 
   const handleDelete = useCallback(async () => {
     Haptics.trigger('MEDIUM');
@@ -62,7 +65,11 @@ const TransactionItemRow = React.memo(({ id }: TransactionItemProps) => {
             ]}
           >
             <Text allowFontScaling style={styles.emoji}>
-              {tx.descripcion || '💰'}
+              {/* BUGFIX (emoji shows description): the avatar should reflect
+                  the category's emoji, falling back to a money bag only when
+                  the category has none. Using `descripcion` here meant a
+                  plain text description would render as the avatar. */}
+              {category?.emoji || '💰'}
             </Text>
           </View>
           <View style={styles.textSection}>

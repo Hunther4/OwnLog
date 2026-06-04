@@ -129,6 +129,10 @@ export default function TransactionList() {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
+  useEffect(() => {
+    setFilters({ search: debouncedSearchQuery || undefined });
+  }, [debouncedSearchQuery]);
+
   const handleLoadMore = async () => {
     if (isLoadingMore) return;
     setIsLoadingMore(true);

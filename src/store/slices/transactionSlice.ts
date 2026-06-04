@@ -17,7 +17,7 @@ export const createTransactionSlice: StateCreator<
     hydrate: () => Promise<void>;
     addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
     deleteTransaction: (id: number) => Promise<void>;
-    setFilters: (newFilters: Partial<{ categoryId: number | null; startDate?: string; endDate?: string }>) => Promise<void>;
+    setFilters: (newFilters: Partial<{ categoryId: number | null; startDate?: string; endDate?: string; search?: string }>) => Promise<void>;
     fetchTransactionsPaged: () => Promise<number>;
     updateTransaction: (id: number, updates: Partial<Transaction>) => Promise<void>;
     getMonthlySummary: () => Promise<{ income: number; expense: number }>;
@@ -32,6 +32,7 @@ export const createTransactionSlice: StateCreator<
     categoryId: null,
     startDate: undefined,
     endDate: undefined,
+    search: undefined,
   },
   _lastTransactionTime: 0,
 
