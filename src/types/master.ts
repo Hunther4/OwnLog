@@ -102,6 +102,18 @@ export interface AppSettingsRow {
 // 4. STORE TYPES (State & Actions)
 // ==========================================
 
+// Recurring Transactions (v1.2.20) — re-exported from src/recurring/types
+// so consumers can `import { RecurringRule } from '../types/master'` without
+// reaching into the recurring/ subdirectory. The single source of truth is
+// still src/recurring/types.ts; this is a convenience surface.
+export type {
+  Frequency as RecurringFrequency,
+  RecurringTransaction as RecurringRule,
+  RecurringTransactionInput as RecurringRuleInput,
+  RecurringRun,
+  TickReport,
+} from '../recurring/types';
+
 export interface FinanceState {
   transactions: {
     ids: number[];
