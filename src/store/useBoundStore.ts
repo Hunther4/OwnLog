@@ -11,6 +11,7 @@ import { QuickActionRepository } from '../repositories/QuickActionRepository';
 import { ReportRepository } from '../repositories/ReportRepository';
 import { TransactionRepository } from '../repositories/TransactionRepository';
 import { CategoryRepository } from '../repositories/CategoryRepository';
+import { RecurringScheduler } from '../recurring/scheduler';
 import { PerformanceMonitor } from '../utils/performance';
 import { log, warn } from '../utils/log';
 
@@ -167,6 +168,7 @@ incrementAppOpens: async () => {
           // tick (PR #2) and the upcoming-runs preview (PR #3) attach
           // to this state.
           await get().loadRecurring();
+          await RecurringScheduler.getInstance().tick();
 
           log(
             '[useBoundStore] ✅ Hydrated balance, transactions, recurring rules, and quick actions from SQLite'

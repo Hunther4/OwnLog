@@ -9,6 +9,7 @@ import * as ScreenCapture from 'expo-screen-capture';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import SQLiteEngine from '../src/database/SQLiteEngine';
 import { useBoundStore } from '../src/store/useBoundStore';
+import { RecurringScheduler } from '../src/recurring/scheduler';
 import OnboardingScreen from '../src/components/OnboardingScreen';
 import PinLock from '../src/components/PinLock';
 import SecurityService from '../src/services/SecurityService';
@@ -193,6 +194,19 @@ export default function Layout() {
     }
     // Run once on mount - empty deps prevent infinite loop
     initialize();
+  }, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", nextAppState => {
+      if (nextAppState === "active") {
+        log("[Layout] App became active — triggering recurring scheduler tick");
+        void RecurringScheduler.getInstance().tick();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   useEffect(() => {
