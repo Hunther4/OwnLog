@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { FinanceStore, Transaction } from '../types/master';
 import { createTransactionSlice } from './slices/transactionSlice';
 import { createUISlice } from './slices/uiSlice';
+import { createRecurringSlice } from './slices/recurringSlice';
 import SQLiteEngine from '../database/SQLiteEngine';
 import { SettingsRepository } from '../repositories/SettingsRepository';
 import { QuickActionRepository } from '../repositories/QuickActionRepository';
@@ -18,6 +19,7 @@ export const useBoundStore = create<FinanceStore>()(
     (set, get, api) => ({
       ...createTransactionSlice(set, get, api),
       ...createUISlice(set, get, api),
+      ...createRecurringSlice(set, get, api),
 
       currentBalance: 0,
       currency: 'CLP',
@@ -157,8 +159,17 @@ incrementAppOpens: async () => {
             hapticsEnabled,
             isInitializing: false,
           });
+
+          // Recurring rules (v1.2.20) are SQLite-backed and re-hydrated
+          // on every boot. We hydrate them AFTER the main set() so the
+          // user sees the rest of the app immediately, even if the
+          // recurring read is slow on a low-end device. The scheduler
+          // tick (PR #2) and the upcoming-runs preview (PR #3) attach
+          // to this state.
+          await get().loadRecurring();
+
           log(
-            '[useBoundStore] ✅ Hydrated balance, transactions, and quick actions from SQLite'
+            '[useBoundStore] ✅ Hydrated balance, transactions, recurring rules, and quick actions from SQLite'
           );
         } catch (error) {
           console.error('[useBoundStore] ❌ Hydration failed:', error);
@@ -262,6 +273,7 @@ incrementAppOpens: async () => {
             quickActions: [],
             categories: [],
             reports: { categoryTotals: [], monthlyTrend: [] },
+            recurring: { ids: [], entities: {} },
           });
           await get().hydrate();
         } catch (error) {
@@ -327,7 +339,11 @@ incrementAppOpens: async () => {
       name: 'finance-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => {
-        const { transactions, reports, ...persistable } = state;
+        // SQLite-backed slices (transactions, recurring) and the
+        // derived reports view are NOT persisted through AsyncStorage
+        // — they are re-hydrated from SQLite on every boot. Only UI
+        // settings and counters survive a cold start.
+        const { transactions, reports, recurring, ...persistable } = state;
         return persistable;
       },
     }

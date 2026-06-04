@@ -181,6 +181,19 @@ export interface FinanceActions {
   setInitialBalance: (amount: number) => Promise<void>;
   resetAllData: () => Promise<void>;
   getMonthlySummary: () => Promise<{ income: number; expense: number }>;
+  // Recurring Transactions (v1.2.20) — actions owned by the recurringSlice.
+  // The slice's StateCreator injects these into the bound store; declaring
+  // them here keeps the FinanceStore type surface complete.
+  loadRecurring: () => Promise<void>;
+  addRecurringRule: (
+    input: import('../recurring/types').RecurringRuleInput
+  ) => Promise<import('../recurring/types').RecurringRule>;
+  updateRecurringRule: (
+    id: number,
+    partial: Partial<import('../recurring/types').RecurringRuleInput>
+  ) => Promise<void>;
+  deleteRecurringRule: (id: number) => Promise<void>;
+  toggleRecurringRule: (id: number, active: boolean) => Promise<void>;
 }
 
 export type FinanceStore = FinanceState & FinanceActions;
