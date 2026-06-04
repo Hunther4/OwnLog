@@ -142,6 +142,13 @@ export interface FinanceState {
   privacyMode: boolean;
   _lastTransactionTime: number;
   appOpenCount: number;
+  // Recurring Transactions (v1.2.20) — normalized state owned by the
+  // recurringSlice. Defined here so the slice's `StateCreator<FinanceStore>`
+  // type-checks against the master type surface.
+  recurring: {
+    ids: number[];
+    entities: Record<number, import('../recurring/types').RecurringTransaction>;
+  };
 }
 
 export interface FinanceActions {
