@@ -1,0 +1,94 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Schema v4 — DDL snapshot (review-time inspection) matches the committed v4 DDL snapshot 1`] = `
+"-- === MIGRATIONS_V3_TO_V4 (executed inside executeInTransaction) ===
+
+  -- Tabla de Transacciones Recurrentes (reglas declaradas por el usuario)
+  CREATE TABLE IF NOT EXISTS recurring_transactions (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    monto           INTEGER NOT NULL CHECK (monto >= 0),
+    categoria_id    INTEGER NOT NULL REFERENCES categorias(id) ON DELETE RESTRICT,
+    descripcion     TEXT,
+    frequency       TEXT NOT NULL CHECK (frequency IN ('daily','weekly','monthly','custom_days')),
+    interval_days   INTEGER CHECK (interval_days IS NULL OR interval_days > 0),
+    start_date      TEXT NOT NULL,
+    end_date        TEXT,
+    last_run_date   TEXT,
+    active          INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0,1)),
+    deleted_at      TEXT,
+    created_at      TEXT NOT NULL
+  );
+
+  -- Extiende transacciones con la FK opcional a la regla que la generó.
+  -- ON DELETE SET NULL: si la regla se borra físicamente, las ejecuciones
+  -- históricas siguen visibles y se desvinculan de la regla.
+  ALTER TABLE transacciones
+    ADD COLUMN recurring_id INTEGER
+    REFERENCES recurring_transactions(id) ON DELETE SET NULL;
+
+
+  -- Búsquedas por reglas activas: filtradas por deleted_at IS NULL para
+  -- que las reglas soft-deleted no paguen el costo del índice.
+  CREATE INDEX IF NOT EXISTS idx_recurring_active
+    ON recurring_transactions(active)
+    WHERE deleted_at IS NULL;
+
+  -- Búsquedas de ejecuciones por regla.
+  CREATE INDEX IF NOT EXISTS idx_tx_recurring_id
+    ON transacciones(recurring_id);
+
+  -- Previene doble-emisión cuando dos ticks se pisan (boot + AppState
+  -- back-to-back). Parcial: las filas manuales (recurring_id = NULL) no
+  -- están restringidas porque NULL nunca es igual a NULL en índices UNIQUE.
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_tx_recurring_run
+    ON transacciones(recurring_id, fecha_local)
+    WHERE recurring_id IS NOT NULL;
+
+PRAGMA user_version = 4;
+
+-- === CREATE_TABLES_V4 (raw constant) ===
+
+  -- Tabla de Transacciones Recurrentes (reglas declaradas por el usuario)
+  CREATE TABLE IF NOT EXISTS recurring_transactions (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    monto           INTEGER NOT NULL CHECK (monto >= 0),
+    categoria_id    INTEGER NOT NULL REFERENCES categorias(id) ON DELETE RESTRICT,
+    descripcion     TEXT,
+    frequency       TEXT NOT NULL CHECK (frequency IN ('daily','weekly','monthly','custom_days')),
+    interval_days   INTEGER CHECK (interval_days IS NULL OR interval_days > 0),
+    start_date      TEXT NOT NULL,
+    end_date        TEXT,
+    last_run_date   TEXT,
+    active          INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0,1)),
+    deleted_at      TEXT,
+    created_at      TEXT NOT NULL
+  );
+
+  -- Extiende transacciones con la FK opcional a la regla que la generó.
+  -- ON DELETE SET NULL: si la regla se borra físicamente, las ejecuciones
+  -- históricas siguen visibles y se desvinculan de la regla.
+  ALTER TABLE transacciones
+    ADD COLUMN recurring_id INTEGER
+    REFERENCES recurring_transactions(id) ON DELETE SET NULL;
+
+
+-- === CREATE_INDICES_V4 (raw constant) ===
+
+  -- Búsquedas por reglas activas: filtradas por deleted_at IS NULL para
+  -- que las reglas soft-deleted no paguen el costo del índice.
+  CREATE INDEX IF NOT EXISTS idx_recurring_active
+    ON recurring_transactions(active)
+    WHERE deleted_at IS NULL;
+
+  -- Búsquedas de ejecuciones por regla.
+  CREATE INDEX IF NOT EXISTS idx_tx_recurring_id
+    ON transacciones(recurring_id);
+
+  -- Previene doble-emisión cuando dos ticks se pisan (boot + AppState
+  -- back-to-back). Parcial: las filas manuales (recurring_id = NULL) no
+  -- están restringidas porque NULL nunca es igual a NULL en índices UNIQUE.
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_tx_recurring_run
+    ON transacciones(recurring_id, fecha_local)
+    WHERE recurring_id IS NOT NULL;
+"
+`;
