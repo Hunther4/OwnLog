@@ -59,15 +59,15 @@ export const createUISlice: StateCreator<
   },
 
   setPrivacyMode: async (value) => {
-    // In-memory state always updates so the UI feels instant even if the
-    // persist call fails (e.g. before SQLite is ready). The try/catch keeps
-    // the app from surfacing a fatal error for a non-critical preference.
+    // Optimistic in-memory update first so the UI feels instant. The
+    // persistence to SQLite is fire-and-forget; if it fails the in-memory
+    // state is still correct for this session.
+    set({ privacyMode: value });
     try {
       await SettingsRepository.setSetting('privacy_mode', value ? 'true' : 'false');
     } catch (error) {
       console.warn('[uiSlice] Failed to persist privacy_mode setting:', error);
     }
-    set({ privacyMode: value });
   },
 
   setDbInitialized: (value) => set({ isDbInitialized: value }),

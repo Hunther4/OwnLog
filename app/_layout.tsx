@@ -157,10 +157,13 @@ export default function Layout() {
         store.setDbInitialized(true);
 
         log('[Layout] 📈 Checking onboarding gate...');
-        // BUGFIX (onboarding loop): the previous `<= 3` matched every launch
-        // because `incrementAppOpens` runs on every hydrate. With `< 3` the
-        // gate is shown for the first three app opens only.
-        if (store.appOpenCount < 3) {
+        // BUGFIX (onboarding loop): use `getState()` instead of the closure
+        // returned by `useBoundStore()` because the latter was captured at
+        // first render and never reflects the post-hydrate counter. Pair
+        // with the fix in `incrementAppOpens` that no longer resets the
+        // counter to 0, so the persisted value now climbs monotonically.
+        const openCount = useBoundStore.getState().appOpenCount;
+        if (openCount < 3) {
           setShowOnboarding(true);
         }
 

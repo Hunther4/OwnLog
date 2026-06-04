@@ -565,8 +565,15 @@ class SQLiteEngine {
       params.push(filters.endDate);
     }
     if (filters.search) {
-      where.push('descripcion LIKE ?');
-      params.push(`%${filters.search}%`);
+      // BUGFIX (LIKE injection): escape user-supplied `%` and `_` so they
+      // are matched literally instead of acting as wildcards, and pick an
+      // ESCAPE clause to make the literal character explicit.
+      const escaped = filters.search
+        .replace(/\\/g, '\\\\')
+        .replace(/%/g, '\\%')
+        .replace(/_/g, '\\_');
+      where.push('descripcion LIKE ? ESCAPE \'\\\\\'');
+      params.push(`%${escaped}%`);
     }
 
     sql += ' WHERE ' + where.join(' AND ');

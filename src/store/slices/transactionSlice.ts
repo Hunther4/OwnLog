@@ -246,25 +246,54 @@ export const createTransactionSlice: StateCreator<
   },
 
   updateTransaction: async (id, updates) => {
-    await TransactionRepository.update(id, updates);
-    
-    // Update entity optimistically
-    set((state) => {
-      const tx = state.transactions.entities[id];
-      if (!tx) return state;
-      
-      return {
-        transactions: {
-          ...state.transactions,
-          entities: {
-            ...state.transactions.entities,
-            [id]: { ...tx, ...updates },
-          },
-        },
-      };
-    });
+    const state = get();
+    const original = state.transactions.entities[id];
+    if (!original) {
+      set({ lastError: 'Transaction not found' });
+      throw new Error('Transaction not found');
+    }
 
-    await get().setFilters(get().filters);
+    // Compute balance delta BEFORE the optimistic update so we can rollback
+    // on DB failure. Without this, editing a $100 expense to $50 would leave
+    // the dashboard showing the old balance as if $100 was still in play.
+    const oldCategory = state.categories.find((c) => c.id === original.categoria_id);
+    const oldMonto = original.monto;
+    const oldDelta = oldCategory?.tipo === 'ingreso' ? oldMonto : -oldMonto;
+
+    const merged = { ...original, ...updates };
+    const newCategory = state.categories.find((c) => c.id === merged.categoria_id);
+    const newMonto = merged.monto;
+    const newDelta = newCategory?.tipo === 'ingreso' ? newMonto : -newMonto;
+
+    const balanceChange = newDelta - oldDelta;
+    const previousBalance = state.currentBalance;
+
+    // Optimistic update: patch entity and adjust balance.
+    set((s) => ({
+      transactions: {
+        ...s.transactions,
+        entities: { ...s.transactions.entities, [id]: merged },
+      },
+      currentBalance: s.currentBalance + balanceChange,
+    }));
+
+    try {
+      await TransactionRepository.update(id, updates);
+      // Re-apply current filters so filteredIds reflects the new entity.
+      await get().setFilters(get().filters);
+    } catch (error) {
+      // Rollback optimistic state on DB failure so the UI never shows
+      // changes that aren't persisted.
+      set((s) => ({
+        transactions: {
+          ...s.transactions,
+          entities: { ...s.transactions.entities, [id]: original },
+        },
+        currentBalance: previousBalance,
+        lastError: 'Failed to update transaction',
+      }));
+      throw error;
+    }
   },
 
   getMonthlySummary: async () => {

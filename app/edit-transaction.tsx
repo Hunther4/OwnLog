@@ -54,11 +54,19 @@ export default function EditTransactionScreen() {
       return;
     }
     try {
+      // BUGFIX (UTC drift, same as AddTransactionForm): use local-time
+      // components for fecha_local so users west of UTC don't see the
+      // date shift by one day after editing.
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const fechaLocal = `${year}-${month}-${day}`;
+
       await updateTransaction(transactionId, {
         monto: numAmount,
         descripcion: description.trim() || undefined,
         categoria_id: selectedCategoryId,
-        fecha_local: date.toISOString().split('T')[0],
+        fecha_local: fechaLocal,
         fecha_utc: date.toISOString(),
       });
       Haptics.notify('NOTIFICATION_SUCCESS');

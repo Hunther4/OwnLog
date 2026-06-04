@@ -87,7 +87,11 @@ export const DashboardHeader = memo(
     // Fetch monthly totals + check auto-reset period
     useEffect(() => {
       const fetchMonthlyTotals = async () => {
-        const monthYear = new Date().toISOString().slice(0, 7);
+        // BUGFIX (UTC drift, same as AddTransactionForm): use local-time
+        // components so users west of UTC don't see totals bleed into the
+        // previous or next month at month boundaries.
+        const now = new Date();
+        const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         const { income, expense } = await TransactionRepository.getMonthlyTotals(monthYear);
 
         // Check auto-reset period
@@ -99,7 +103,12 @@ export const DashboardHeader = memo(
         if (periodDays > 0 && savedUntil) {
           const untilMs = parseInt(savedUntil, 10);
           if (Date.now() >= untilMs) {
-            // Period expired — show 0 for income/expense (balance unchanged)
+            // BUGFIX (R7): previously the period expired and then sat at
+            // 0/0 forever. Renew the period for another N days so the user
+            // keeps getting rolling totals without re-entering the modal.
+            const newUntil = Date.now() + periodDays * 24 * 60 * 60 * 1000;
+            await SettingsRepository.setSetting('reset_until_date', newUntil.toString());
+            // Show 0 for the new (fresh) period and keep the balance intact.
             setMonthlyIncome(0);
             setMonthlyExpense(0);
             return;

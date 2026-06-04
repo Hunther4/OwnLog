@@ -162,7 +162,7 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// Mock for expo-background-fetch
+// Mock for expo-background-fetch (removed with cloud backup in v1.2.18)
 jest.mock('expo-background-fetch', () => ({
   BackgroundFetchResult: { NewData: 'newData', NoData: 'noData', Failed: 'failed' },
   BackgroundFetchStatus: { Available: 'available', Denied: 'denied', Restricted: 'restricted' },
@@ -170,7 +170,7 @@ jest.mock('expo-background-fetch', () => ({
   unregisterTaskAsync: jest.fn().mockResolvedValue(undefined),
   setMinimumIntervalAsync: jest.fn().mockResolvedValue(undefined),
   getStatusAsync: jest.fn().mockResolvedValue('available'),
-}));
+}), { virtual: true });
 
 // Mock for expo-splash-screen
 jest.mock('expo-splash-screen', () => ({
@@ -210,11 +210,11 @@ jest.mock('@expo/vector-icons', () => ({
   FontAwesome: () => null,
 }));
 
-// Mock for expo-task-manager (used by cloudBackupTask)
+// Mock for expo-task-manager (removed with cloud backup in v1.2.18)
 jest.mock('expo-task-manager', () => ({
   defineTask: jest.fn(),
   isTaskRegisteredAsync: jest.fn().mockResolvedValue(false),
-}));
+}), { virtual: true });
 
 // Mock for @react-native-community/datetimepicker
 jest.mock('@react-native-community/datetimepicker', () => {

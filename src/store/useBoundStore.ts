@@ -68,19 +68,21 @@ incrementAppOpens: async () => {
         const count = (state.appOpenCount || 0) + 1;
         set({ appOpenCount: count });
         await SettingsRepository.setSetting('app_open_count', count.toString());
-        
-        if (count >= 3) {
+
+        // Run a one-time performance audit on the third open. We do NOT
+        // reset the counter here — resetting to 0 caused the onboarding
+        // gate to re-fire on every launch (the persisted value would loop
+        // 0→1→2→3→0 across launches). The audit only needs to run once;
+        // subsequent opens with count > 3 are a no-op for the audit.
+        if (count === 3) {
           try {
             const limits = PerformanceMonitor.getThresholds();
             console.debug('[Performance] Thresholds:', limits);
           } catch (err) {
             warn('[incrementAppOpens] Auditoría falló:', err);
           }
-          // Resetear contador
-          set({ appOpenCount: 0 });
-          await SettingsRepository.setSetting('app_open_count', '0');
         }
-        
+
         return count;
       },
 
