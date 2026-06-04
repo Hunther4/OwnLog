@@ -62,3 +62,79 @@ export const CREATE_INDICES_V1 = `
   CREATE INDEX IF NOT EXISTS idx_categoria ON transacciones(categoria_id);
   CREATE INDEX IF NOT EXISTS idx_transacciones_active ON transacciones(fecha_local, categoria_id) WHERE is_deleted = 0;
 `;
+
+/**
+ * Schema v4 — Recurring Transactions (v1.2.20)
+ *
+ * Single source of truth for the v4 DDL. Kept separate from CREATE_TABLES_V1
+ * to preserve the project rule that every migration is a discrete unit
+ * (see `database-persistence` delta spec and AGENTS.md "atomic restore").
+ */
+export const CREATE_TABLES_V4 = `
+  -- Tabla de Transacciones Recurrentes (reglas declaradas por el usuario)
+  CREATE TABLE IF NOT EXISTS recurring_transactions (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    monto           INTEGER NOT NULL CHECK (monto >= 0),
+    categoria_id    INTEGER NOT NULL REFERENCES categorias(id) ON DELETE RESTRICT,
+    descripcion     TEXT,
+    frequency       TEXT NOT NULL CHECK (frequency IN ('daily','weekly','monthly','custom_days')),
+    interval_days   INTEGER CHECK (interval_days IS NULL OR interval_days > 0),
+    start_date      TEXT NOT NULL,
+    end_date        TEXT,
+    last_run_date   TEXT,
+    active          INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0,1)),
+    deleted_at      TEXT,
+    created_at      TEXT NOT NULL
+  );
+
+  -- Extiende transacciones con la FK opcional a la regla que la generó.
+  -- ON DELETE SET NULL: si la regla se borra físicamente, las ejecuciones
+  -- históricas siguen visibles y se desvinculan de la regla.
+  ALTER TABLE transacciones
+    ADD COLUMN recurring_id INTEGER
+    REFERENCES recurring_transactions(id) ON DELETE SET NULL;
+`;
+
+/**
+ * Schema v4 — indices. Se crean todos con `IF NOT EXISTS` para que el
+ * bloque sea idempotente si el engine lo re-ejecuta (idempotencia es
+ * un requisito del proyecto: ver `MIGRATIONS_V3_TO_V4` y AGENTS.md).
+ */
+export const CREATE_INDICES_V4 = `
+  -- Búsquedas por reglas activas: filtradas por deleted_at IS NULL para
+  -- que las reglas soft-deleted no paguen el costo del índice.
+  CREATE INDEX IF NOT EXISTS idx_recurring_active
+    ON recurring_transactions(active)
+    WHERE deleted_at IS NULL;
+
+  -- Búsquedas de ejecuciones por regla.
+  CREATE INDEX IF NOT EXISTS idx_tx_recurring_id
+    ON transacciones(recurring_id);
+
+  -- Previene doble-emisión cuando dos ticks se pisan (boot + AppState
+  -- back-to-back). Parcial: las filas manuales (recurring_id = NULL) no
+  -- están restringidas porque NULL nunca es igual a NULL en índices UNIQUE.
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_tx_recurring_run
+    ON transacciones(recurring_id, fecha_local)
+    WHERE recurring_id IS NOT NULL;
+`;
+
+/**
+ * Sequence of statements that SQLiteEngine executes inside a single
+ * `executeInTransaction` call when promoting a v3 database to v4.
+ *
+ * Order matters:
+ *  1. CREATE TABLE recurring_transactions
+ *  2. ALTER TABLE transacciones (add recurring_id)
+ *  3. CREATE the three indices
+ *  4. PRAGMA user_version = 4
+ *
+ * Every statement is idempotent (CREATE … IF NOT EXISTS, ALTER … ADD
+ * COLUMN is not natively idempotent in SQLite, so the engine guards that
+ * step with a pragma_table_info check, see SQLiteEngine.migrate).
+ */
+export const MIGRATIONS_V3_TO_V4: string[] = [
+  CREATE_TABLES_V4,
+  CREATE_INDICES_V4,
+  'PRAGMA user_version = 4;',
+];

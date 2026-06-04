@@ -1,6 +1,11 @@
 import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
-import { DATABASE_PRAGMAS, CREATE_TABLES_V1, CREATE_INDICES_V1 } from './schema';
+import {
+  DATABASE_PRAGMAS,
+  CREATE_TABLES_V1,
+  CREATE_INDICES_V1,
+  MIGRATIONS_V3_TO_V4,
+} from './schema';
 import { TransactionRow } from '../types/master';
 import { log, warn } from '../utils/log';
 
@@ -134,6 +139,35 @@ class SQLiteEngine {
             log('[SQLiteEngine] ℹ️ is_deleted columns already exist, skipping migration');
             await this.db.execAsync('PRAGMA user_version = 3');
           }
+        }
+
+        if (currentVersion === 3) {
+          // v3 → v4: add recurring_transactions table + indices. Idempotent
+          // (every statement uses IF NOT EXISTS) so a re-entry is safe.
+          log('[SQLiteEngine] 🚀 Migrating to version 4 (Recurring Transactions)...');
+          await this.executeInTransaction(async (tx) => {
+            for (const stmt of MIGRATIONS_V3_TO_V4) {
+              await tx.execAsync(stmt);
+            }
+          });
+
+          // Post-migration integrity gate (per design.md §4.3). Refuse to
+          // accept the new version if SQLite reports corruption.
+          const v4Integrity = await this.db.getAllAsync<{ integrity_check: string }>(
+            'PRAGMA integrity_check'
+          );
+          const v4Ok =
+            v4Integrity.length === 1 && v4Integrity[0]['integrity_check'] === 'ok';
+          if (!v4Ok) {
+            const v4Errors = v4Integrity
+              .map((r) => r.integrity_check)
+              .filter((v) => v !== 'ok')
+              .join('; ');
+            throw new Error(
+              `v3→v4 migration integrity check failed: ${v4Errors}`
+            );
+          }
+          log('[SQLiteEngine] ✅ Migrated to version 4');
         }
 
         log('[SQLiteEngine] 🛠️ Adding performance indices...');
