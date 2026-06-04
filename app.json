@@ -2,7 +2,7 @@
   "expo": {
     "name": "OwnLog",
     "slug": "hunther-wallet",
-    "version": "1.1.9",
+    "version": "1.2.19",
     "scheme": "com.drack.ownlog",
     "android": {
       "package": "com.drack.ownlog",
